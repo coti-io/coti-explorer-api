@@ -1,4 +1,4 @@
-<p align="center"><img src="/assets/logo-slogan-300x200.jpg"></p>
+<p align="center"><img src="/src/assets/logo-slogan-300x200.jpg"></p>
 
 # COTI Explorer-API
 
