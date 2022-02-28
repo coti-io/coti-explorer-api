@@ -27,7 +27,7 @@ export class NetworkFeeBaseTransaction extends BaseEntity {
   reducedAmount: number;
 
   @Column('decimal')
-  fullnodeFeeCreateTime: number;
+  networkFeeCreateTime: number;
 
   @ManyToOne(() => DbAppTransaction, transaction => transaction.networkFeeBaseTransactions)
   @JoinColumn({ name: 'transactionId', referencedColumnName: 'id' })

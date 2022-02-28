@@ -1,13 +1,14 @@
 import { dbsyncInit, validate } from './utils';
 import { Module } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { AppService } from './app.service';
-import { AppController } from './app.controller';
 import { ScheduleModule } from '@nestjs/schedule';
+import { AppGateway } from './gateway/app.gateway';
+import { TransactionService, MysqlLiveService } from './services';
+import { TransactionController } from './controllers';
 
 @Module({
   imports: [validate(), dbsyncInit(), ScheduleModule.forRoot()],
-  controllers: [AppController],
-  providers: [ConfigService, AppService],
+  controllers: [TransactionController],
+  providers: [ConfigService, TransactionService, AppGateway, MysqlLiveService],
 })
 export class AppModule {}

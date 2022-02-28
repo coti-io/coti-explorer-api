@@ -1,5 +1,6 @@
 import { Allow, IsNotEmpty, IsString } from 'class-validator';
 import { DbAppTransaction } from 'src/entities';
+import { Status } from 'src/utils/http-constants';
 
 export class TransactionDto {
   hash: string;
@@ -22,6 +23,12 @@ export class TransactionDto {
 
   constructor(transaction: DbAppTransaction) {
     delete transaction.id;
+    this.baseTransactions = [
+      ...transaction.inputBaseTransactions,
+      ...transaction.receiverBaseTransactions,
+      ...transaction.fullnodeFeeBaseTransactions,
+      ...transaction.networkFeeBaseTransactions,
+    ];
     delete transaction.inputBaseTransactions;
     delete transaction.receiverBaseTransactions;
     delete transaction.fullnodeFeeBaseTransactions;
@@ -40,21 +47,18 @@ export class GetAddressTransactionsDto {
   @IsString()
   @IsNotEmpty()
   address: string;
-
-  @Allow()
-  limit: number;
-
-  @Allow()
-  offset: number;
 }
 
-export type TransactionsResponseDto = {
-  status: string;
+export class TransactionsResponseDto {
+  @Allow()
   transactionsData: TransactionDto[];
-};
+
+  constructor(transactionsResponseDto: TransactionsResponseDto) {
+    Object.assign(transactionsResponseDto);
+  }
+}
 
 export type TransactionResponseDto = {
-  status: string;
   transactionData: TransactionDto;
 };
 
@@ -86,4 +90,41 @@ export type BaseTransaction = {
   createTime: Date;
   name: BaseTransactionName;
   originalAmount?: number;
+};
+
+export class TransactionEventDto {
+  id: number;
+  attachmentTime: number;
+  type: string;
+  hash: string;
+  transactionConsensusUpdateTime: number;
+  amount: number;
+  receiverAddressHash: string;
+  nfbtAmount: number;
+  ffbtAmount: number;
+
+  constructor(transactionEventDto: TransactionEventDto) {
+    Object.assign(transactionEventDto);
+  }
+}
+
+export class TransactionMessageDto {
+  [transactionData: string]: {
+    date: number;
+    type: string;
+    txHash: string;
+    transactionConsensusUpdateTime: number;
+    amount: number;
+    baseTransactions: BaseTransactionEvent[];
+  };
+
+  constructor(transactionEventDto: TransactionEventDto) {
+    Object.assign(transactionEventDto);
+  }
+}
+
+export type BaseTransactionEvent = {
+  name: BaseTransactionName;
+  amount?: number;
+  addressHash?: string;
 };

@@ -17,13 +17,13 @@ export class ReceiverBaseTransaction extends BaseEntity {
   @Column()
   addressHash: string;
 
-  @Column('double')
+  @Column()
   amount: number;
 
-  @Column('double')
+  @Column()
   receiverCreateTime: number;
 
-  @Column('double')
+  @Column()
   originalAmount: number;
 
   @Column({ nullable: true })

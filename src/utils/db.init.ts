@@ -16,6 +16,8 @@ export function dbsyncInit() {
       database: configService.get<string>('DB_SYNC_NAME'),
       entities: ['dist/entities/*.entity{.ts,.js}'],
       timezone: 'Z',
+      connectTimeout: 60 * 60 * 1000,
+      timeout: 60 * 60 * 1000,
     }),
   });
 }

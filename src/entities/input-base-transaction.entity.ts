@@ -17,10 +17,10 @@ export class InputBaseTransaction extends BaseEntity {
   @Column()
   addressHash: string;
 
-  @Column('double')
+  @Column()
   amount: number;
 
-  @Column('double')
+  @Column()
   inputCreateTime: number;
 
   @ManyToOne(() => DbAppTransaction, transaction => transaction.inputBaseTransactions)

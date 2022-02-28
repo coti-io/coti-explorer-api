@@ -1,5 +1,6 @@
-import { TransactionType } from 'src/dtos/transaction.dto';
-import { Column, Entity, OneToMany } from 'typeorm';
+import { BaseTransactionEvent, BaseTransactionName, TransactionType } from 'src/dtos/transaction.dto';
+import { exec } from 'src/utils/promise-helper';
+import { Column, Entity, getManager, OneToMany } from 'typeorm';
 import { FullnodeFeeBaseTransaction, NetworkFeeBaseTransaction, ReceiverBaseTransaction } from '.';
 import { BaseEntity } from './base.entity';
 import { InputBaseTransaction } from './input-base-transaction.entity';
@@ -15,13 +16,13 @@ export class DbAppTransaction extends BaseEntity {
   @Column('decimal')
   amount: string;
 
-  @Column('double')
+  @Column()
   attachmentTime: number;
 
   @Column()
   isValid: string;
 
-  @Column('double')
+  @Column()
   transactionCreateTime: number;
 
   @Column()
@@ -33,16 +34,16 @@ export class DbAppTransaction extends BaseEntity {
   @Column()
   senderHash: string;
 
-  @Column('double')
+  @Column()
   senderTrustScore: number;
 
-  @Column('double')
+  @Column()
   transactionConsensusUpdateTime: number;
 
   @Column()
   transactionDescription: string;
 
-  @Column('double')
+  @Column()
   trustChainConsensus: number;
 
   @Column()
@@ -61,4 +62,60 @@ export class DbAppTransaction extends BaseEntity {
   networkFeeBaseTransactions: NetworkFeeBaseTransaction[];
 
   baseTransactions: (InputBaseTransaction | ReceiverBaseTransaction | FullnodeFeeBaseTransaction | NetworkFeeBaseTransaction)[];
+}
+
+export const newTransaction = () => {
+  return `
+    SELECT 
+    transactions.id,
+    transactions.attachmentTime,
+    transactions.type,
+    transactions.hash,
+    transactions.transactionConsensusUpdateTime,
+    transactions.amount,
+    rbt.addressHash as receiverAddressHash,
+    nfbt.amount as nfbtAmount,
+    ffbt.amount as ffbtAmount
+    FROM
+    db_sync_staging.transactions as transactions
+    LEFT JOIN db_sync_staging.receiver_base_transactions as rbt ON transactions.id = rbt.transactionId
+    LEFT JOIN db_sync_staging.fullnode_fee_base_transactions as ffbt ON transactions.id = ffbt.transactionId
+    LEFT JOIN db_sync_staging.network_fee_base_transactions as nfbt ON transactions.id = nfbt.transactionId 
+    WHERE 
+    transactions.transactionConsensusUpdateTime is null OR
+    transactions.transactionConsensusUpdateTime = 0 and transactions.updateTime > DATE_SUB(NOW(), INTERVAL 15 MINUTE)
+  `;
+};
+
+export const approvedTransaction = () => {
+  return `
+    SELECT 
+    transactions.id,
+    transactions.attachmentTime,
+    transactions.type,
+    transactions.hash,
+    transactions.transactionConsensusUpdateTime,
+    transactions.amount,
+    rbt.addressHash as receiverAddressHash,
+    nfbt.amount as nfbtAmount,
+    ffbt.amount as ffbtAmount
+    FROM
+    db_sync_staging.transactions as transactions
+    LEFT JOIN db_sync_staging.receiver_base_transactions as rbt ON transactions.id = rbt.transactionId
+    LEFT JOIN db_sync_staging.fullnode_fee_base_transactions as ffbt ON transactions.id = ffbt.transactionId
+    LEFT JOIN db_sync_staging.network_fee_base_transactions as nfbt ON transactions.id = nfbt.transactionId 
+    WHERE 
+    transactions.transactionConsensusUpdateTime > 0 and transactions.updateTime > DATE_SUB(NOW(), INTERVAL 15 MINUTE)
+    `;
+};
+
+export async function getRelatedInputs(transactionId: number): Promise<BaseTransactionEvent[]> {
+  const [ibtsError, ibts] = await exec(
+    getManager('db_sync').getRepository<InputBaseTransaction>('input_base_transactions').createQueryBuilder().where({ transactionId }).getMany(),
+  );
+  if (ibtsError) throw ibtsError;
+
+  return ibts.map(ibt => {
+    return { name: BaseTransactionName.INPUT, addressHash: ibt.addressHash };
+  });
 }
