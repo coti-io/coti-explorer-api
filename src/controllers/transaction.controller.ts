@@ -12,7 +12,7 @@ export class TransactionController {
   constructor(private readonly transactionService: TransactionService) {}
 
   @Get('lastTransactions')
-  async getTransactions(@Query('limit') limit = 0, @Query('offset') offset = 0): Promise<TransactionsResponseDto> {
+  async getTransactions(@Query('limit') limit = 20, @Query('offset') offset = 0): Promise<TransactionsResponseDto> {
     if (limit < 0 || offset < 0) {
       throw new ExplorerError({ message: 'limit and offset cannot be under 0' });
     }

@@ -33,12 +33,13 @@ export class TransactionService {
               address,
             })
         : query;
+
       const [transactionsError, transactions] = await exec(query.getMany());
 
       if (transactionsError) {
         throw transactionsError;
       }
-      const parsedTransactions = transactions.map(tx => new TransactionDto(tx));
+      const parsedTransactions = transactions ? transactions.map(tx => new TransactionDto(tx)) : [];
 
       return {
         transactionsData: parsedTransactions,

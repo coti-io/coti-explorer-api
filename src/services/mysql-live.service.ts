@@ -158,7 +158,7 @@ async function parseTransactionEvent(transactionEvent: TransactionEventDto): Pro
 
   return {
     transactionData: {
-      date: transactionEvent.attachmentTime,
+      date: Number(transactionEvent.attachmentTime),
       txHash: transactionEvent.hash,
       amount: transactionEvent.amount,
       baseTransactions: [...ibts, rbt, ffbt, nfbt],

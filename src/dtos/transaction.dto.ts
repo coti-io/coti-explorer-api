@@ -1,6 +1,5 @@
 import { Allow, IsNotEmpty, IsString } from 'class-validator';
 import { DbAppTransaction } from 'src/entities';
-import { Status } from 'src/utils/http-constants';
 
 export class TransactionDto {
   hash: string;
@@ -12,16 +11,18 @@ export class TransactionDto {
   trustChainConsensus: number;
   trustChainTrustScore: number;
   transactionConsensusUpdateTime: number;
-  createTime: Date;
+  transactionCreateTime: number;
+  createTime: number;
   attachmentTime: number;
   senderHash: string;
   senderTrustScore: number;
   childrenTransactionHashes: string[];
-  isValid: any;
+  isValid: string;
   transactionDescription: string;
   index: number;
 
   constructor(transaction: DbAppTransaction) {
+    Object.assign(this, transaction);
     delete transaction.id;
     this.baseTransactions = [
       ...transaction.inputBaseTransactions,
@@ -33,7 +34,10 @@ export class TransactionDto {
     delete transaction.receiverBaseTransactions;
     delete transaction.fullnodeFeeBaseTransactions;
     delete transaction.networkFeeBaseTransactions;
-    Object.assign(this, transaction);
+    this.createTime = Number(transaction.createTime.getTime());
+    this.attachmentTime = Number(transaction.attachmentTime);
+    this.transactionCreateTime = Number(transaction.transactionCreateTime);
+    this.transactionConsensusUpdateTime = Number(transaction.transactionConsensusUpdateTime);
   }
 }
 
@@ -58,9 +62,9 @@ export class TransactionsResponseDto {
   }
 }
 
-export type TransactionResponseDto = {
+export class TransactionResponseDto {
   transactionData: TransactionDto;
-};
+}
 
 export enum BaseTransactionName {
   INPUT = 'IBT',
@@ -83,14 +87,14 @@ export enum TransactionType {
   TOKEN_MINTING = 'TokenMinting',
 }
 
-export type BaseTransaction = {
+export class BaseTransaction {
   hash: string;
   addressHash: string;
   amount?: number;
   createTime: Date;
   name: BaseTransactionName;
   originalAmount?: number;
-};
+}
 
 export class TransactionEventDto {
   id: number;
