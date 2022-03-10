@@ -1,4 +1,4 @@
-import { Allow, IsNotEmpty, IsString } from 'class-validator';
+import { Allow, IsNotEmpty, IsNumber, IsString } from 'class-validator';
 import { DbAppTransaction } from 'src/entities';
 
 export class TransactionDto {
@@ -22,7 +22,6 @@ export class TransactionDto {
   index: number;
 
   constructor(transaction: DbAppTransaction) {
-    Object.assign(this, transaction);
     delete transaction.id;
     this.baseTransactions = [
       ...transaction.inputBaseTransactions,
@@ -34,6 +33,7 @@ export class TransactionDto {
     delete transaction.receiverBaseTransactions;
     delete transaction.fullnodeFeeBaseTransactions;
     delete transaction.networkFeeBaseTransactions;
+    Object.assign(this, transaction);
     this.createTime = Number(transaction.createTime.getTime());
     this.attachmentTime = Number(transaction.attachmentTime);
     this.transactionCreateTime = Number(transaction.transactionCreateTime);
@@ -57,8 +57,12 @@ export class TransactionsResponseDto {
   @Allow()
   transactionsData: TransactionDto[];
 
-  constructor(transactionsResponseDto: TransactionsResponseDto) {
-    Object.assign(transactionsResponseDto);
+  @IsNumber()
+  totalTransactions: number;
+
+  constructor(total: number, transactions: DbAppTransaction[]) {
+    this.totalTransactions = total;
+    this.transactionsData = transactions.map((x: DbAppTransaction) => new TransactionDto(x));
   }
 }
 
@@ -99,32 +103,69 @@ export class BaseTransaction {
 export class TransactionEventDto {
   id: number;
   attachmentTime: number;
+  createTime: Date;
   type: string;
   hash: string;
   transactionConsensusUpdateTime: number;
+  leftParentHash: string;
+  rightParentHash: string;
+  trustChainConsensus: number;
+  trustChainTrustScore: number;
+  senderHash: string;
+  senderTrustScore: string;
+  isValid: any;
+  transactionDescription: string;
   amount: number;
-  receiverAddressHash: string;
+  rbtAddressHash: string;
+  rbtOriginalAmount: number;
+  rbtAmount: number;
+  rbtCreateTime: number;
+  rbtHash: string;
+  nfbtAddressHash: string;
+  nfbtOriginalAmount: number;
   nfbtAmount: number;
+  nfbtCreateTime: number;
+  nfbtHash: string;
+  ffbtAddressHash: string;
+  ffbtOriginalAmount: number;
   ffbtAmount: number;
+  ffbtCreateTime: number;
+  ffbtHash: string;
 
   constructor(transactionEventDto: TransactionEventDto) {
     Object.assign(transactionEventDto);
   }
 }
 
+type TranscationData = {
+  createTime: Date;
+  attachmentTime: Date;
+  type: string;
+  hash: string;
+  transactionConsensusUpdateTime: number;
+  amount: number;
+  leftParentHash: string;
+  rightParentHash: string;
+  trustChainConsensus: number;
+  trustChainTrustScore: number;
+  senderHash: string;
+  senderTrustScore: string;
+  isValid: any;
+  baseTransactions: BaseTransactionEvent[];
+  transactionDescription: string;
+};
 export class TransactionMessageDto {
-  [transactionData: string]: {
-    date: number;
-    type: string;
-    txHash: string;
-    transactionConsensusUpdateTime: number;
-    amount: number;
-    baseTransactions: BaseTransactionEvent[];
-  };
+  status: TransactionStatus;
+  transactionData: TranscationData;
 
   constructor(transactionEventDto: TransactionEventDto) {
     Object.assign(transactionEventDto);
   }
+}
+
+export enum TransactionStatus {
+  CONFIRMED = 'CONFIRMED',
+  ATTACHED_TO_DAG = 'ATTACHED_TO_DAG',
 }
 
 export type BaseTransactionEvent = {

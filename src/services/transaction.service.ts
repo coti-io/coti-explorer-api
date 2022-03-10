@@ -24,6 +24,7 @@ export class TransactionService {
         .leftJoinAndSelect('transactions.networkFeeBaseTransactions', 'network_fee_base_transactions')
         .limit(limit)
         .offset(offset);
+
       query = address
         ? query
             .where('receiver_base_transactions.addressHash=:address', {
@@ -34,16 +35,15 @@ export class TransactionService {
             })
         : query;
 
-      const [transactionsError, transactions] = await exec(query.getMany());
+      const [transactionsError, transactions] = await exec(query.orderBy({ attachmentTime: 'DESC' }).getMany());
 
-      if (transactionsError) {
-        throw transactionsError;
+      const [totalTransactionsError, totalTransactions] = await exec(query.getCount());
+
+      if (transactionsError || totalTransactionsError) {
+        throw transactionsError || totalTransactionsError;
       }
-      const parsedTransactions = transactions ? transactions.map(tx => new TransactionDto(tx)) : [];
 
-      return {
-        transactionsData: parsedTransactions,
-      };
+      return new TransactionsResponseDto(totalTransactions, transactions);
     } catch (error) {
       this.logger.error(error);
       throw new ExplorerError({

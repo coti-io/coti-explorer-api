@@ -71,11 +71,31 @@ export const newTransaction = () => {
     transactions.attachmentTime,
     transactions.type,
     transactions.hash,
+    transactions.leftParentHash,
+    transactions.rightParentHash,
+    transactions.trustChainConsensus,
+    transactions.trustChainTrustScore,
+    transactions.senderHash,
+    transactions.senderTrustScore,
+    transactions.isValid,
+    transactions.transactionDescription,
     transactions.transactionConsensusUpdateTime,
     transactions.amount,
-    rbt.addressHash as receiverAddressHash,
+    rbt.addressHash as rbtAddressHash,
+    rbt.amount as rbtAmount,
+    rbt.originalAmount as rbtOriginalAmount,
+    rbt.createTime as rbtCreateTime,
+    rbt.hash as rbtHash,
+    nfbt.addressHash as nfbtAddressHash,
     nfbt.amount as nfbtAmount,
-    ffbt.amount as ffbtAmount
+    nfbt.originalAmount as nfbtOriginalAmount,
+    nfbt.createTime as nfbtCreateTime,
+    nfbt.hash as nfbtHash,
+    ffbt.addressHash as ffbtAddressHash,
+    ffbt.amount as ffbtAmount,
+    ffbt.originalAmount as ffbtOriginalAmount,
+    ffbt.createTime as ffbtCreateTime,
+    ffbt.hash as ffbtHash
     FROM
     db_sync_staging.transactions as transactions
     LEFT JOIN db_sync_staging.receiver_base_transactions as rbt ON transactions.id = rbt.transactionId
@@ -83,7 +103,8 @@ export const newTransaction = () => {
     LEFT JOIN db_sync_staging.network_fee_base_transactions as nfbt ON transactions.id = nfbt.transactionId 
     WHERE 
     transactions.transactionConsensusUpdateTime is null OR
-    transactions.transactionConsensusUpdateTime = 0 and transactions.updateTime > DATE_SUB(NOW(), INTERVAL 15 MINUTE)
+    transactions.transactionConsensusUpdateTime = 0 
+    ORDER BY transactions.attachmentTime DESC
   `;
 };
 
@@ -94,19 +115,40 @@ export const approvedTransaction = () => {
     transactions.attachmentTime,
     transactions.type,
     transactions.hash,
+    transactions.leftParentHash,
+    transactions.rightParentHash,
+    transactions.trustChainConsensus,
+    transactions.trustChainTrustScore,
+    transactions.senderHash,
+    transactions.senderTrustScore,
+    transactions.isValid,
+    transactions.transactionDescription,
     transactions.transactionConsensusUpdateTime,
     transactions.amount,
-    rbt.addressHash as receiverAddressHash,
+    rbt.addressHash as rbtAddressHash,
+    rbt.amount as rbtAmount,
+    rbt.originalAmount as rbtOriginalAmount,
+    rbt.createTime as rbtCreateTime,
+    rbt.hash as rbtHash,
+    nfbt.addressHash as nfbtAddressHash,
     nfbt.amount as nfbtAmount,
-    ffbt.amount as ffbtAmount
+    nfbt.originalAmount as nfbtOriginalAmount,
+    nfbt.createTime as nfbtCreateTime,
+    nfbt.hash as nfbtHash,
+    ffbt.addressHash as ffbtAddressHash,
+    ffbt.amount as ffbtAmount,
+    ffbt.originalAmount as ffbtOriginalAmount,
+    ffbt.createTime as ffbtCreateTime,
+    ffbt.hash as ffbtHash
     FROM
     db_sync_staging.transactions as transactions
     LEFT JOIN db_sync_staging.receiver_base_transactions as rbt ON transactions.id = rbt.transactionId
     LEFT JOIN db_sync_staging.fullnode_fee_base_transactions as ffbt ON transactions.id = ffbt.transactionId
     LEFT JOIN db_sync_staging.network_fee_base_transactions as nfbt ON transactions.id = nfbt.transactionId 
     WHERE 
-    transactions.transactionConsensusUpdateTime > 0 and transactions.updateTime > DATE_SUB(NOW(), INTERVAL 15 MINUTE)
-    `;
+    transactions.transactionConsensusUpdateTime > 0
+    ORDER BY transactions.attachmentTime DESC
+  `;
 };
 
 export async function getRelatedInputs(transactionId: number): Promise<BaseTransactionEvent[]> {

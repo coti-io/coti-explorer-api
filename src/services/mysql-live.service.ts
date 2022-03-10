@@ -1,9 +1,12 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import LiveMysql from 'mysql-live-select';
-import { BaseTransactionName, TransactionEventDto, TransactionMessageDto } from 'src/dtos/transaction.dto';
-import { approvedTransaction, getRelatedInputs, newTransaction } from 'src/entities';
+import { iif } from 'rxjs';
+import { BaseTransactionName, TransactionEventDto, TransactionMessageDto, TransactionStatus } from 'src/dtos/transaction.dto';
+import { approvedTransaction, DbAppTransaction, getRelatedInputs, newTransaction } from 'src/entities';
 import { AppGateway } from 'src/gateway/app.gateway';
+import { getManager } from 'typeorm';
+import { exec } from 'src/utils/promise-helper';
 let firstRun = true;
 
 export enum SocketEvents {
@@ -11,6 +14,7 @@ export enum SocketEvents {
   TransactionCompleted = 'deposit_transaction_completed',
   GeneralTransactionsNotification = '/topic/transactions',
   AddressTransactionsNotification = '/topic/addressTransactions',
+  TransactionDetails = '/topic/transactionDetails',
 }
 
 type MonitoredTx = {
@@ -108,6 +112,34 @@ export class MysqlLiveService {
     });
   }
 
+  async getTotalTransactions(address?: string) {
+    const manager = getManager('db_sync');
+    let query = manager
+      .getRepository<DbAppTransaction>('transactions')
+      .createQueryBuilder('transactions')
+      .leftJoinAndSelect('transactions.inputBaseTransactions', 'input_base_transactions')
+      .leftJoinAndSelect('transactions.receiverBaseTransactions', 'receiver_base_transactions')
+      .leftJoinAndSelect('transactions.fullnodeFeeBaseTransactions', 'fullnode_fee_base_transactions')
+      .leftJoinAndSelect('transactions.networkFeeBaseTransactions', 'network_fee_base_transactions');
+
+    query = address
+      ? query
+          .where('receiver_base_transactions.addressHash=:address', {
+            address,
+          })
+          .orWhere('input_base_transactions.addressHash=:address', {
+            address,
+          })
+      : query;
+
+    const [totalTransactionsError, totalTransactions] = await exec(query.getCount());
+    if (totalTransactionsError) {
+      throw totalTransactionsError;
+    }
+
+    return totalTransactions;
+  }
+
   async eventHandler(event: SocketEvents, transactionEvents: any[]) {
     const msgPromises = [];
     if (firstRun) {
@@ -115,22 +147,35 @@ export class MysqlLiveService {
       return;
     }
     if (!transactionEvents?.length) return;
-
+    let totalSentToPublic = 0;
+    const addressSubscribersMap = this.gateway.addressSubscribersMap || {};
+    const transactionSubscribersMap = this.gateway.transactionSubscribersMap || [];
     try {
       for (const transactionEvent of transactionEvents) {
-        const socketIds = this.gateway.addressSubscribersMap || [];
         const parsedTransaction = await parseTransactionEvent(transactionEvent);
         this.logger.debug(`about to send event:${event} message: ${JSON.stringify(transactionEvent)}`);
 
-        for (const [socketId, addressHash] of Object.entries(socketIds)) {
-          if (addressHash === transactionEvent.receiverAddressHash) {
+        for (const [socketId, addressHash] of Object.entries(addressSubscribersMap)) {
+          if (addressHash === transactionEvent.rbtAddressHash) {
+            const totalTransactions = await this.getTotalTransactions(addressHash);
+            msgPromises.push(this.gateway.sendMessageToRoom(socketId, `${SocketEvents.AddressTransactionsNotification}/${transactionEvent.rbtAddressHash}`, parsedTransaction));
             msgPromises.push(
-              this.gateway.sendMessageToRoom(socketId, `${SocketEvents.AddressTransactionsNotification}/${transactionEvent.receiverAddressHash}`, parsedTransaction),
+              this.gateway.sendMessageToRoom(socketId, `${SocketEvents.AddressTransactionsNotification}/${transactionEvent.rbtAddressHash}/total`, totalTransactions),
             );
           }
         }
 
-        msgPromises.push(this.gateway.sendBroadcast(SocketEvents.GeneralTransactionsNotification, parsedTransaction));
+        for (const [socketId, hash] of Object.entries(transactionSubscribersMap)) {
+          if (hash === transactionEvent.hash) {
+            msgPromises.push(this.gateway.sendMessageToRoom(socketId, `${SocketEvents.TransactionDetails}/${transactionEvent.hash}`, parsedTransaction));
+          }
+        }
+        if (totalSentToPublic < 20) {
+          const totalTransactions = await this.getTotalTransactions();
+          msgPromises.push(this.gateway.sendBroadcast(SocketEvents.GeneralTransactionsNotification, parsedTransaction));
+          msgPromises.push(this.gateway.sendBroadcast(`${SocketEvents.GeneralTransactionsNotification}/total`, totalTransactions));
+          totalSentToPublic += 1;
+        }
       }
 
       await Promise.all(msgPromises);
@@ -145,24 +190,49 @@ async function parseTransactionEvent(transactionEvent: TransactionEventDto): Pro
   const ibts = await getRelatedInputs(transactionEvent.id);
   const rbt = {
     name: BaseTransactionName.RECEIVER,
-    addressHash: transactionEvent.receiverAddressHash,
+    addressHash: transactionEvent.rbtAddressHash,
+    amount: transactionEvent.rbtAmount,
+    originalAmount: transactionEvent.rbtOriginalAmount,
+    createTime: transactionEvent.rbtCreateTime,
+    hash: transactionEvent.rbtHash,
   };
   const ffbt = {
     name: BaseTransactionName.FULL_NODE_FEE,
+    addressHash: transactionEvent.ffbtAddressHash,
     amount: transactionEvent.ffbtAmount,
+    originalAmount: transactionEvent.ffbtOriginalAmount,
+    createTime: transactionEvent.ffbtCreateTime,
+    hash: transactionEvent.ffbtHash,
   };
   const nfbt = {
     name: BaseTransactionName.NETWORK_FEE,
+    addressHash: transactionEvent.nfbtAddressHash,
     amount: transactionEvent.nfbtAmount,
+    originalAmount: transactionEvent.nfbtOriginalAmount,
+    createTime: transactionEvent.nfbtCreateTime,
+    hash: transactionEvent.nfbtHash,
   };
 
+  const status =
+    transactionEvent.transactionConsensusUpdateTime && transactionEvent.transactionConsensusUpdateTime > 0 ? TransactionStatus.CONFIRMED : TransactionStatus.ATTACHED_TO_DAG;
+
   return {
+    status,
     transactionData: {
-      date: Number(transactionEvent.attachmentTime),
-      txHash: transactionEvent.hash,
+      attachmentTime: new Date(transactionEvent.attachmentTime * 1000),
+      createTime: transactionEvent.createTime,
+      hash: transactionEvent.hash,
       amount: transactionEvent.amount,
       baseTransactions: [...ibts, rbt, ffbt, nfbt],
       type: transactionEvent.type,
+      leftParentHash: transactionEvent.leftParentHash,
+      rightParentHash: transactionEvent.rightParentHash,
+      trustChainConsensus: transactionEvent.trustChainConsensus === 0 ? null : transactionEvent.trustChainConsensus,
+      trustChainTrustScore: transactionEvent.trustChainTrustScore,
+      senderHash: transactionEvent.senderHash,
+      senderTrustScore: transactionEvent.senderTrustScore,
+      isValid: transactionEvent.isValid,
+      transactionDescription: transactionEvent.transactionDescription,
       transactionConsensusUpdateTime: transactionEvent.transactionConsensusUpdateTime,
     },
   };
