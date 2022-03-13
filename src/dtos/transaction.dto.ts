@@ -11,7 +11,6 @@ export class TransactionDto {
   trustChainConsensus: number;
   trustChainTrustScore: number;
   transactionConsensusUpdateTime: number;
-  transactionCreateTime: number;
   createTime: number;
   attachmentTime: number;
   senderHash: string;
@@ -33,10 +32,11 @@ export class TransactionDto {
     delete transaction.receiverBaseTransactions;
     delete transaction.fullnodeFeeBaseTransactions;
     delete transaction.networkFeeBaseTransactions;
+    delete transaction.createTime;
+    delete transaction.updateTime;
     Object.assign(this, transaction);
-    this.createTime = Number(transaction.createTime.getTime());
     this.attachmentTime = Number(transaction.attachmentTime);
-    this.transactionCreateTime = Number(transaction.transactionCreateTime);
+    this.createTime = Number(transaction.transactionCreateTime);
     this.transactionConsensusUpdateTime = Number(transaction.transactionConsensusUpdateTime);
   }
 }
@@ -94,8 +94,8 @@ export enum TransactionType {
 export class BaseTransaction {
   hash: string;
   addressHash: string;
-  amount?: number;
-  createTime: Date;
+  amount: number;
+  createTime: number;
   name: BaseTransactionName;
   originalAmount?: number;
 }
@@ -137,7 +137,7 @@ export class TransactionEventDto {
   }
 }
 
-type TranscationData = {
+type TransactionData = {
   createTime: Date;
   attachmentTime: Date;
   type: string;
@@ -157,7 +157,7 @@ type TranscationData = {
 
 export class TransactionMessageDto {
   status: TransactionStatus;
-  transactionData: TranscationData;
+  transactionData: TransactionData;
 
   constructor(transactionEventDto: TransactionEventDto) {
     Object.assign(transactionEventDto);
