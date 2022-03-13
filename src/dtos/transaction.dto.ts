@@ -1,11 +1,11 @@
 import { Allow, IsNotEmpty, IsNumber, IsString } from 'class-validator';
-import { DbAppTransaction } from 'src/entities';
+import { BaseTransactionEntity, DbAppTransaction, FullnodeFeeBaseTransaction, InputBaseTransaction, NetworkFeeBaseTransaction, ReceiverBaseTransaction } from 'src/entities';
 
 export class TransactionDto {
   hash: string;
   amount: string;
   type: TransactionType;
-  baseTransactions: BaseTransaction[];
+  baseTransactions: BaseTransactionDto[];
   leftParentHash: string;
   rightParentHash: string;
   trustChainConsensus: number;
@@ -21,23 +21,26 @@ export class TransactionDto {
   index: number;
 
   constructor(transaction: DbAppTransaction) {
-    delete transaction.id;
     this.baseTransactions = [
-      ...transaction.inputBaseTransactions,
-      ...transaction.receiverBaseTransactions,
-      ...transaction.fullnodeFeeBaseTransactions,
-      ...transaction.networkFeeBaseTransactions,
+      ...transaction.inputBaseTransactions.map(x => new InuputBaseTransactionDto(x)),
+      ...transaction.receiverBaseTransactions.map(x => new ReceiverBaseTransactionDto(x)),
+      ...transaction.fullnodeFeeBaseTransactions.map(x => new FullnodeFeeBaseTransactionDto(x)),
+      ...transaction.networkFeeBaseTransactions.map(x => new NetworkFeeBaseTransactionDto(x)),
     ];
+    this.attachmentTime = Number(transaction.attachmentTime);
+    this.createTime = Number(transaction.transactionCreateTime);
+    this.transactionConsensusUpdateTime = Number(transaction.transactionConsensusUpdateTime);
+    delete transaction.id;
     delete transaction.inputBaseTransactions;
     delete transaction.receiverBaseTransactions;
     delete transaction.fullnodeFeeBaseTransactions;
     delete transaction.networkFeeBaseTransactions;
-    delete transaction.createTime;
+    delete transaction.transactionCreateTime;
     delete transaction.updateTime;
+    delete transaction.createTime;
+    delete transaction.attachmentTime;
+    delete transaction.transactionConsensusUpdateTime;
     Object.assign(this, transaction);
-    this.attachmentTime = Number(transaction.attachmentTime);
-    this.createTime = Number(transaction.transactionCreateTime);
-    this.transactionConsensusUpdateTime = Number(transaction.transactionConsensusUpdateTime);
   }
 }
 
@@ -91,13 +94,53 @@ export enum TransactionType {
   TOKEN_MINTING = 'TokenMinting',
 }
 
-export class BaseTransaction {
+export class BaseTransactionDto {
   hash: string;
   addressHash: string;
   amount: number;
   createTime: number;
   name: BaseTransactionName;
-  originalAmount?: number;
+  constructor(baseTransactionDto: BaseTransactionEntity, createTime: number) {
+    this.hash = baseTransactionDto.hash;
+    this.addressHash = baseTransactionDto.addressHash;
+    this.amount = baseTransactionDto.amount;
+    this.name = baseTransactionDto.name;
+    this.createTime = Number(createTime);
+  }
+}
+
+export class InuputBaseTransactionDto extends BaseTransactionDto {
+  constructor(baseTransaction: InputBaseTransaction) {
+    super(baseTransaction, baseTransaction.inputCreateTime);
+  }
+}
+
+export class FullnodeFeeBaseTransactionDto extends BaseTransactionDto {
+  originalAmount: number;
+  constructor(baseTransaction: FullnodeFeeBaseTransaction) {
+    super(baseTransaction, baseTransaction.fullnodeFeeCreateTime);
+    this.originalAmount = baseTransaction.originalAmount;
+  }
+}
+
+export class NetworkFeeBaseTransactionDto extends BaseTransactionDto {
+  originalAmount: number;
+  reducedAmount: number;
+  constructor(baseTransaction: NetworkFeeBaseTransaction) {
+    super(baseTransaction, baseTransaction.networkFeeCreateTime);
+    this.reducedAmount = baseTransaction.reducedAmount;
+    this.originalAmount = baseTransaction.originalAmount;
+  }
+}
+
+export class ReceiverBaseTransactionDto extends BaseTransactionDto {
+  originalAmount: number;
+  receiverDescription: string;
+  constructor(baseTransaction: ReceiverBaseTransaction) {
+    super(baseTransaction, baseTransaction.receiverCreateTime);
+    this.receiverDescription = baseTransaction.receiverDescription;
+    this.originalAmount = baseTransaction.originalAmount;
+  }
 }
 
 export class TransactionEventDto {

@@ -19,7 +19,6 @@ export class AppGateway implements OnGatewayInit, OnGatewayConnection, OnGateway
   handleConnection(client: Socket, ...args: any[]) {
     try {
       this.logger.log(`[connection][socketId: ${client.id}], subscribe to public events`);
-      this.publicSocketIds.push(`client.id_${client.id}`);
       client.join(`client.id_${client.id}`);
     } catch (e) {
       this.logger.warn('socket connection failed');

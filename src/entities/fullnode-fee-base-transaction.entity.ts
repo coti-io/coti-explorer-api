@@ -1,25 +1,7 @@
-import { BaseTransactionName } from 'src/dtos/transaction.dto';
 import { Column, Entity, JoinColumn, ManyToOne } from 'typeorm';
-import { DbAppTransaction } from '.';
-import { BaseEntity } from './base.entity';
-
+import { BaseTransactionEntity, DbAppTransaction } from '.';
 @Entity('fullnode_fee_base_transactions')
-export class FullnodeFeeBaseTransaction extends BaseEntity {
-  @Column()
-  transactionId: number;
-
-  @Column()
-  hash: string;
-
-  @Column()
-  name: BaseTransactionName;
-
-  @Column()
-  addressHash: string;
-
-  @Column('decimal')
-  amount: number;
-
+export class FullnodeFeeBaseTransaction extends BaseTransactionEntity {
   @Column('decimal')
   originalAmount: number;
 

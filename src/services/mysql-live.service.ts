@@ -7,7 +7,7 @@ import { AppGateway } from 'src/gateway/app.gateway';
 import { getManager } from 'typeorm';
 import { exec } from 'src/utils/promise-helper';
 
-let firstRun = true;
+const firstRunMap = {};
 
 export enum SocketEvents {
   NewTransactionCreated = 'deposit_transaction_created',
@@ -86,6 +86,10 @@ export class MysqlLiveService {
 
     this.liveConnection.select(newTransaction(), [{ table: `transactions` }]).on('update', async (diff: Diff, data: any[]) => {
       const event = SocketEvents.NewTransactionCreated;
+      if (!firstRunMap[event]) {
+        firstRunMap[event] = true;
+        return;
+      }
       if (diff.added && diff.added.length > 0) {
         await this.eventHandler(event, diff.added);
       }
@@ -93,6 +97,10 @@ export class MysqlLiveService {
 
     this.liveConnection.select(approvedTransaction(), [{ table: `transactions` }]).on('update', (diff: Diff, data: any[]) => {
       const event = SocketEvents.TransactionCompleted;
+      if (!firstRunMap[event]) {
+        firstRunMap[event] = true;
+        return;
+      }
       if (diff.added && diff.added.length > 0) {
         this.eventHandler(event, diff.added);
       }
@@ -142,10 +150,6 @@ export class MysqlLiveService {
 
   async eventHandler(event: SocketEvents, transactionEvents: any[]) {
     const msgPromises = [];
-    if (firstRun) {
-      firstRun = false;
-      return;
-    }
     if (!transactionEvents?.length) return;
     let totalSentToPublic = 0;
     const addressSubscribersMap = this.gateway.addressSubscribersMap || {};
