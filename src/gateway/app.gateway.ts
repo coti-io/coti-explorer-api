@@ -3,8 +3,6 @@ import { OnGatewayConnection, OnGatewayDisconnect, OnGatewayInit, SubscribeMessa
 import { Server, Socket } from 'socket.io';
 import { corsConfig } from '../configurations';
 
-const signatureExpiration = 10000;
-
 @WebSocketGateway({ cors: { ...corsConfig } })
 export class AppGateway implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect {
   logger: Logger = new Logger('AppGateway');

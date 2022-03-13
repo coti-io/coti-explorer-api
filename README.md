@@ -11,7 +11,8 @@
 
 ## What is Coti Explorer API?
 
-Coti Explorer API is a component developed by Coti that provide an API services to Coti explorer. It utilize the Coti db-app component for fast searching abilities.
+Coti Explorer API is a component developed by Coti that provide an API services to Coti explorer. It utilize the Coti
+db-app component for fast searching abilities.
 
 ---
 

@@ -154,6 +154,7 @@ type TranscationData = {
   baseTransactions: BaseTransactionEvent[];
   transactionDescription: string;
 };
+
 export class TransactionMessageDto {
   status: TransactionStatus;
   transactionData: TranscationData;

@@ -3,7 +3,7 @@ import { Module } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { ScheduleModule } from '@nestjs/schedule';
 import { AppGateway } from './gateway/app.gateway';
-import { TransactionService, MysqlLiveService } from './services';
+import { MysqlLiveService, TransactionService } from './services';
 import { TransactionController } from './controllers';
 
 @Module({

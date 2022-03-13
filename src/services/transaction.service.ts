@@ -1,6 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ExplorerError } from 'src/errors/explorer-error';
-import { HttpCodes, Status } from 'src/utils/http-constants';
 import { getManager } from 'typeorm';
 import { TransactionDto, TransactionResponseDto, TransactionsResponseDto } from '../dtos/transaction.dto';
 import { DbAppTransaction } from '../entities/';
@@ -9,8 +8,6 @@ import { exec } from '../utils/promise-helper';
 @Injectable()
 export class TransactionService {
   private readonly logger = new Logger('TransactionService');
-
-  constructor() {}
 
   async getTransactions(limit: number, offset: number, address?: string): Promise<TransactionsResponseDto> {
     const manager = getManager('db_sync');
@@ -49,8 +46,6 @@ export class TransactionService {
       throw new ExplorerError({
         message: error.message,
       });
-    } finally {
-      this.logger.debug(`findAll start current free connections after release ${manager['connection']['driver']['pool']['_freeConnections'].length}`);
     }
   }
 
@@ -81,8 +76,6 @@ export class TransactionService {
       throw new ExplorerError({
         message: error.message,
       });
-    } finally {
-      this.logger.debug(`findAll start current free connections after release ${manager['connection']['driver']['pool']['_freeConnections'].length}`);
     }
   }
 }

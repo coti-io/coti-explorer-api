@@ -1,12 +1,12 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import LiveMysql from 'mysql-live-select';
-import { iif } from 'rxjs';
 import { BaseTransactionName, TransactionEventDto, TransactionMessageDto, TransactionStatus } from 'src/dtos/transaction.dto';
 import { approvedTransaction, DbAppTransaction, getRelatedInputs, newTransaction } from 'src/entities';
 import { AppGateway } from 'src/gateway/app.gateway';
 import { getManager } from 'typeorm';
 import { exec } from 'src/utils/promise-helper';
+
 let firstRun = true;
 
 export enum SocketEvents {
