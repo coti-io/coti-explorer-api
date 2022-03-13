@@ -1,17 +1,17 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import LiveMysql from 'mysql-live-select';
-import { BaseTransactionName, TransactionEventDto, TransactionMessageDto, TransactionStatus } from 'src/dtos/transaction.dto';
+import { BaseTransactionName, TransactionDto, TransactionEventDto, TransactionMessageDto, TransactionStatus } from 'src/dtos/transaction.dto';
 import { approvedTransaction, DbAppTransaction, getRelatedInputs, newTransaction } from 'src/entities';
 import { AppGateway } from 'src/gateway/app.gateway';
-import { getManager } from 'typeorm';
+import { getManager, In } from 'typeorm';
 import { exec } from 'src/utils/promise-helper';
 
 const firstRunMap = {};
 
 export enum SocketEvents {
   NewTransactionCreated = 'deposit_transaction_created',
-  TransactionCompleted = 'deposit_transaction_completed',
+  TransactionConfirmed = 'deposit_transaction_confirmed',
   GeneralTransactionsNotification = '/topic/transactions',
   AddressTransactionsNotification = '/topic/addressTransactions',
   TransactionDetails = '/topic/transactionDetails',
@@ -96,7 +96,7 @@ export class MysqlLiveService {
     });
 
     this.liveConnection.select(approvedTransaction(), [{ table: `transactions` }]).on('update', (diff: Diff, data: any[]) => {
-      const event = SocketEvents.TransactionCompleted;
+      const event = SocketEvents.TransactionConfirmed;
       if (!firstRunMap[event]) {
         firstRunMap[event] = true;
         return;
@@ -147,39 +147,58 @@ export class MysqlLiveService {
 
     return totalTransactions;
   }
+  async getTransactionsById(transactionIds: string[]) {
+    const manager = getManager('db_sync');
+    try {
+      let query = manager
+        .getRepository<DbAppTransaction>('transactions')
+        .createQueryBuilder('transactions')
+        .leftJoinAndSelect('transactions.inputBaseTransactions', 'input_base_transactions')
+        .leftJoinAndSelect('transactions.receiverBaseTransactions', 'receiver_base_transactions')
+        .leftJoinAndSelect('transactions.fullnodeFeeBaseTransactions', 'fullnode_fee_base_transactions')
+        .leftJoinAndSelect('transactions.networkFeeBaseTransactions', 'network_fee_base_transactions')
+        .where(`transactions.id IN(${transactionIds.join(',')})`);
 
+      const [transactionsError, transactions] = await exec(query.orderBy({ attachmentTime: 'DESC' }).getMany());
+      if (transactionsError) {
+        throw transactionsError;
+      }
+      return transactions;
+    } catch (error) {
+      this.logger.error(error);
+    }
+  }
   async eventHandler(event: SocketEvents, transactionEvents: any[]) {
     const msgPromises = [];
     if (!transactionEvents?.length) return;
-    let totalSentToPublic = 0;
     const addressSubscribersMap = this.gateway.addressSubscribersMap || {};
     const transactionSubscribersMap = this.gateway.transactionSubscribersMap || [];
+
     try {
-      for (const transactionEvent of transactionEvents) {
-        const parsedTransaction = await parseTransactionEvent(transactionEvent);
-        this.logger.debug(`about to send event:${event} message: ${JSON.stringify(transactionEvent)}`);
+      const transactionIds = transactionEvents.map(x => x.id);
+      const transactionEntities = await this.getTransactionsById(transactionIds);
+      const totalTransactions = await this.getTotalTransactions();
+
+      for (const transaction of transactionEntities) {
+        const receiverAddress = transaction.receiverBaseTransactions.length ? transaction.receiverBaseTransactions[0].addressHash : undefined;
+        const eventMessage = new TransactionDto(transaction);
+        this.logger.debug(`about to send event:${event} message: ${JSON.stringify(eventMessage)}`);
 
         for (const [socketId, addressHash] of Object.entries(addressSubscribersMap)) {
-          if (addressHash === transactionEvent.rbtAddressHash) {
-            const totalTransactions = await this.getTotalTransactions(addressHash);
-            msgPromises.push(this.gateway.sendMessageToRoom(socketId, `${SocketEvents.AddressTransactionsNotification}/${transactionEvent.rbtAddressHash}`, parsedTransaction));
-            msgPromises.push(
-              this.gateway.sendMessageToRoom(socketId, `${SocketEvents.AddressTransactionsNotification}/${transactionEvent.rbtAddressHash}/total`, totalTransactions),
-            );
+          if (addressHash === receiverAddress) {
+            msgPromises.push(this.gateway.sendMessageToRoom(socketId, `${SocketEvents.AddressTransactionsNotification}/${receiverAddress}`, eventMessage));
+            msgPromises.push(this.gateway.sendMessageToRoom(socketId, `${SocketEvents.AddressTransactionsNotification}/${receiverAddress}/total`, totalTransactions));
           }
         }
 
         for (const [socketId, hash] of Object.entries(transactionSubscribersMap)) {
-          if (hash === transactionEvent.hash) {
-            msgPromises.push(this.gateway.sendMessageToRoom(socketId, `${SocketEvents.TransactionDetails}/${transactionEvent.hash}`, parsedTransaction));
+          if (hash === eventMessage.hash) {
+            msgPromises.push(this.gateway.sendMessageToRoom(socketId, `${SocketEvents.TransactionDetails}/${eventMessage.hash}`, eventMessage));
           }
         }
-        if (totalSentToPublic < 20) {
-          const totalTransactions = await this.getTotalTransactions();
-          msgPromises.push(this.gateway.sendBroadcast(SocketEvents.GeneralTransactionsNotification, parsedTransaction));
-          msgPromises.push(this.gateway.sendBroadcast(`${SocketEvents.GeneralTransactionsNotification}/total`, totalTransactions));
-          totalSentToPublic += 1;
-        }
+
+        msgPromises.push(this.gateway.sendBroadcast(SocketEvents.GeneralTransactionsNotification, eventMessage));
+        msgPromises.push(this.gateway.sendBroadcast(`${SocketEvents.GeneralTransactionsNotification}/total`, totalTransactions));
       }
 
       await Promise.all(msgPromises);
@@ -188,56 +207,4 @@ export class MysqlLiveService {
       throw error;
     }
   }
-}
-
-async function parseTransactionEvent(transactionEvent: TransactionEventDto): Promise<TransactionMessageDto> {
-  const ibts = await getRelatedInputs(transactionEvent.id);
-  const rbt = {
-    name: BaseTransactionName.RECEIVER,
-    addressHash: transactionEvent.rbtAddressHash,
-    amount: transactionEvent.rbtAmount,
-    originalAmount: transactionEvent.rbtOriginalAmount,
-    createTime: transactionEvent.rbtCreateTime,
-    hash: transactionEvent.rbtHash,
-  };
-  const ffbt = {
-    name: BaseTransactionName.FULL_NODE_FEE,
-    addressHash: transactionEvent.ffbtAddressHash,
-    amount: transactionEvent.ffbtAmount,
-    originalAmount: transactionEvent.ffbtOriginalAmount,
-    createTime: transactionEvent.ffbtCreateTime,
-    hash: transactionEvent.ffbtHash,
-  };
-  const nfbt = {
-    name: BaseTransactionName.NETWORK_FEE,
-    addressHash: transactionEvent.nfbtAddressHash,
-    amount: transactionEvent.nfbtAmount,
-    originalAmount: transactionEvent.nfbtOriginalAmount,
-    createTime: transactionEvent.nfbtCreateTime,
-    hash: transactionEvent.nfbtHash,
-  };
-
-  const status =
-    transactionEvent.transactionConsensusUpdateTime && transactionEvent.transactionConsensusUpdateTime > 0 ? TransactionStatus.CONFIRMED : TransactionStatus.ATTACHED_TO_DAG;
-
-  return {
-    status,
-    transactionData: {
-      attachmentTime: new Date(transactionEvent.attachmentTime * 1000),
-      createTime: transactionEvent.createTime,
-      hash: transactionEvent.hash,
-      amount: transactionEvent.amount,
-      baseTransactions: [...ibts, rbt, ffbt, nfbt],
-      type: transactionEvent.type,
-      leftParentHash: transactionEvent.leftParentHash,
-      rightParentHash: transactionEvent.rightParentHash,
-      trustChainConsensus: transactionEvent.trustChainConsensus === 0 ? null : transactionEvent.trustChainConsensus,
-      trustChainTrustScore: transactionEvent.trustChainTrustScore,
-      senderHash: transactionEvent.senderHash,
-      senderTrustScore: transactionEvent.senderTrustScore,
-      isValid: transactionEvent.isValid,
-      transactionDescription: transactionEvent.transactionDescription,
-      transactionConsensusUpdateTime: transactionEvent.transactionConsensusUpdateTime,
-    },
-  };
 }

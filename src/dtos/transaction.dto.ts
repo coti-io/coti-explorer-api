@@ -1,4 +1,5 @@
-import { Allow, IsNotEmpty, IsNumber, IsString } from 'class-validator';
+import { Optional } from '@nestjs/common';
+import { Allow, IsNotEmpty, IsNumber, IsString, Max } from 'class-validator';
 import { BaseTransactionEntity, DbAppTransaction, FullnodeFeeBaseTransaction, InputBaseTransaction, NetworkFeeBaseTransaction, ReceiverBaseTransaction } from 'src/entities';
 
 export class TransactionDto {
@@ -19,6 +20,7 @@ export class TransactionDto {
   isValid: string;
   transactionDescription: string;
   index: number;
+  status?: TransactionStatus;
 
   constructor(transaction: DbAppTransaction) {
     this.baseTransactions = [
@@ -29,7 +31,8 @@ export class TransactionDto {
     ];
     this.attachmentTime = Number(transaction.attachmentTime);
     this.createTime = Number(transaction.transactionCreateTime);
-    this.transactionConsensusUpdateTime = Number(transaction.transactionConsensusUpdateTime);
+    this.transactionConsensusUpdateTime = Number(transaction.transactionConsensusUpdateTime) === 0 ? null : Number(transaction.transactionConsensusUpdateTime);
+    this.status = this.transactionConsensusUpdateTime ? TransactionStatus.CONFIRMED : TransactionStatus.ATTACHED_TO_DAG;
     delete transaction.id;
     delete transaction.inputBaseTransactions;
     delete transaction.receiverBaseTransactions;
@@ -54,8 +57,16 @@ export class GetAddressTransactionsDto {
   @IsString()
   @IsNotEmpty()
   address: string;
-}
 
+  @Optional()
+  @IsNumber()
+  @Max(50)
+  limit = 50;
+
+  @Optional()
+  @IsNumber()
+  offset = 0;
+}
 export class TransactionsResponseDto {
   @Allow()
   transactionsData: TransactionDto[];

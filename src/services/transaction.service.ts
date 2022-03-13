@@ -30,17 +30,20 @@ export class TransactionService {
             .orWhere('input_base_transactions.addressHash=:address', {
               address,
             })
+            .orWhere('fullnode_fee_base_transactions.addressHash=:address', {
+              address,
+            })
+            .orWhere('network_fee_base_transactions.addressHash=:address', {
+              address,
+            })
         : query;
 
-      const [transactionsError, transactions] = await exec(query.orderBy({ attachmentTime: 'DESC' }).getMany());
-
-      const [totalTransactionsError, totalTransactions] = await exec(query.getCount());
-
-      if (transactionsError || totalTransactionsError) {
-        throw transactionsError || totalTransactionsError;
+      const [transactionsError, transactionsNcount] = await exec(query.orderBy({ attachmentTime: 'DESC' }).getManyAndCount());
+      if (transactionsError) {
+        throw transactionsError;
       }
-
-      return new TransactionsResponseDto(totalTransactions, transactions);
+      const [transactionEntities, totalTransactions] = transactionsNcount;
+      return new TransactionsResponseDto(totalTransactions, transactionEntities);
     } catch (error) {
       this.logger.error(error);
       throw new ExplorerError({
