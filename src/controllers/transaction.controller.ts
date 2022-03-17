@@ -1,5 +1,4 @@
-import { Body, Controller, Get, Post, Query, UseFilters, UseInterceptors } from '@nestjs/common';
-import { ExplorerError } from 'src/errors/explorer-error';
+import { Body, Controller, Get, Post, UseFilters, UseInterceptors } from '@nestjs/common';
 import { ExplorerExceptionFilter } from 'src/filters/http-exception.filter';
 import { TransactionInterceptor } from 'src/interceptors/transaction.interceptor';
 import { TransactionService } from 'src/services';
@@ -25,7 +24,7 @@ export class TransactionController {
 
   @Post('addressTransactions')
   async getAddressTransactions(@Body() body: GetAddressTransactionsDto): Promise<TransactionsResponseDto> {
-    const transactions = await this.transactionService.getTransactions(body.limit, body.offset, body.address);
+    const transactions = await this.transactionService.getTransactionsByAddress(body.limit, body.offset, body.address);
     return transactions;
   }
 }

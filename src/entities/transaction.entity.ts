@@ -64,35 +64,33 @@ export class DbAppTransaction extends BaseEntity {
   baseTransactions: (InputBaseTransaction | ReceiverBaseTransaction | FullnodeFeeBaseTransaction | NetworkFeeBaseTransaction)[];
 }
 
-export const newTransaction = () => {
+export const getNewTransactions = () => {
   return `
     SELECT 
     transactions.id
     FROM
-    db_sync_staging.transactions as transactions
+    transactions as transactions
     WHERE 
-    transactions.transactionConsensusUpdateTime is null OR
-    transactions.transactionConsensusUpdateTime = 0 
+    updateTime > DATE_ADD(NOW(), INTERVAL -10 MINUTE)
+    AND transactionConsensusUpdateTime IS NULL
     ORDER BY transactions.attachmentTime DESC
   `;
 };
-
-export const approvedTransaction = () => {
+export const getConfirmedTransactions = () => {
   return `
     SELECT 
     transactions.id
     FROM
-    db_sync_staging.transactions as transactions
+    transactions as transactions
     WHERE 
-    transactions.transactionConsensusUpdateTime > 0
+    updateTime > DATE_ADD(NOW(), INTERVAL -10 MINUTE)
+    AND transactionConsensusUpdateTime IS NOT NULL
     ORDER BY transactions.attachmentTime DESC
   `;
 };
 
 export async function getRelatedInputs(transactionId: number): Promise<BaseTransactionEvent[]> {
-  const [ibtsError, ibts] = await exec(
-    getManager('db_sync').getRepository<InputBaseTransaction>('input_base_transactions').createQueryBuilder().where({ transactionId }).getMany(),
-  );
+  const [ibtsError, ibts] = await exec(getManager('db_sync').getRepository<InputBaseTransaction>('input_base_transactions').find({ transactionId }));
   if (ibtsError) throw ibtsError;
 
   return ibts.map(ibt => {

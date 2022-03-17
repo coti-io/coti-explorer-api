@@ -1,10 +1,10 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import LiveMysql from 'mysql-live-select';
-import { BaseTransactionName, TransactionDto, TransactionEventDto, TransactionMessageDto, TransactionStatus } from 'src/dtos/transaction.dto';
-import { approvedTransaction, DbAppTransaction, getRelatedInputs, newTransaction } from 'src/entities';
+import { TransactionDto } from 'src/dtos/transaction.dto';
+import { DbAppTransaction, getConfirmedTransactions, getNewTransactions, getTransactionsCount } from 'src/entities';
 import { AppGateway } from 'src/gateway/app.gateway';
-import { getManager, In } from 'typeorm';
+import { getManager } from 'typeorm';
 import { exec } from 'src/utils/promise-helper';
 
 const firstRunMap = {};
@@ -84,27 +84,39 @@ export class MysqlLiveService {
       return Promise.reject(error);
     }
 
-    this.liveConnection.select(newTransaction(), [{ table: `transactions` }]).on('update', async (diff: Diff, data: any[]) => {
-      const event = SocketEvents.NewTransactionCreated;
-      if (!firstRunMap[event]) {
-        firstRunMap[event] = true;
-        return;
-      }
-      if (diff.added && diff.added.length > 0) {
-        await this.eventHandler(event, diff.added);
-      }
-    });
+    this.liveConnection
+      .select(getNewTransactions(), [
+        {
+          table: `transactions`,
+        },
+      ])
+      .on('update', async (diff: Diff, data: any[]) => {
+        const event = SocketEvents.NewTransactionCreated;
+        if (!firstRunMap[event]) {
+          firstRunMap[event] = true;
+          return;
+        }
+        if (diff.added && diff.added.length > 0) {
+          await this.eventHandler(event, diff.added);
+        }
+      });
 
-    this.liveConnection.select(approvedTransaction(), [{ table: `transactions` }]).on('update', (diff: Diff, data: any[]) => {
-      const event = SocketEvents.TransactionConfirmed;
-      if (!firstRunMap[event]) {
-        firstRunMap[event] = true;
-        return;
-      }
-      if (diff.added && diff.added.length > 0) {
-        this.eventHandler(event, diff.added);
-      }
-    });
+    this.liveConnection
+      .select(getConfirmedTransactions(), [
+        {
+          table: `transactions`,
+        },
+      ])
+      .on('update', (diff: Diff, data: any[]) => {
+        const event = SocketEvents.TransactionConfirmed;
+        if (!firstRunMap[event]) {
+          firstRunMap[event] = true;
+          return;
+        }
+        if (diff.added && diff.added.length > 0) {
+          this.eventHandler(event, diff.added);
+        }
+      });
   }
 
   onBeforeExit(): void {
@@ -120,37 +132,18 @@ export class MysqlLiveService {
     });
   }
 
-  async getTotalTransactions(address?: string) {
-    const manager = getManager('db_sync');
-    let query = manager
-      .getRepository<DbAppTransaction>('transactions')
-      .createQueryBuilder('transactions')
-      .leftJoinAndSelect('transactions.inputBaseTransactions', 'input_base_transactions')
-      .leftJoinAndSelect('transactions.receiverBaseTransactions', 'receiver_base_transactions')
-      .leftJoinAndSelect('transactions.fullnodeFeeBaseTransactions', 'fullnode_fee_base_transactions')
-      .leftJoinAndSelect('transactions.networkFeeBaseTransactions', 'network_fee_base_transactions');
-
-    query = address
-      ? query
-          .where('receiver_base_transactions.addressHash=:address', {
-            address,
-          })
-          .orWhere('input_base_transactions.addressHash=:address', {
-            address,
-          })
-      : query;
-
-    const [totalTransactionsError, totalTransactions] = await exec(query.getCount());
+  async getTotalTransactionCountMap(addresses: string[]): Promise<{ [key: string]: number }> {
+    const [totalTransactionsError, totalTransactions] = await exec(getTransactionsCount(addresses));
     if (totalTransactionsError) {
       throw totalTransactionsError;
     }
-
     return totalTransactions;
   }
+
   async getTransactionsById(transactionIds: string[]) {
     const manager = getManager('db_sync');
     try {
-      let query = manager
+      const query = manager
         .getRepository<DbAppTransaction>('transactions')
         .createQueryBuilder('transactions')
         .leftJoinAndSelect('transactions.inputBaseTransactions', 'input_base_transactions')
@@ -158,8 +151,9 @@ export class MysqlLiveService {
         .leftJoinAndSelect('transactions.fullnodeFeeBaseTransactions', 'fullnode_fee_base_transactions')
         .leftJoinAndSelect('transactions.networkFeeBaseTransactions', 'network_fee_base_transactions')
         .where(`transactions.id IN(${transactionIds.join(',')})`);
-
-      const [transactionsError, transactions] = await exec(query.orderBy({ attachmentTime: 'DESC' }).getMany());
+      // TODO: return when we have an index
+      // .orderBy({ attachmentTime: 'DESC' })
+      const [transactionsError, transactions] = await exec(query.getMany());
       if (transactionsError) {
         throw transactionsError;
       }
@@ -168,43 +162,72 @@ export class MysqlLiveService {
       this.logger.error(error);
     }
   }
+  getTransactionAddressesToNotify(transaction: DbAppTransaction): string[] {
+    const addressToNotifyMap = {};
+    for (const bt of transaction.inputBaseTransactions) {
+      addressToNotifyMap[bt.addressHash] = 1;
+    }
+    for (const bt of transaction.receiverBaseTransactions) {
+      addressToNotifyMap[bt.addressHash] = 1;
+    }
+    for (const bt of transaction.fullnodeFeeBaseTransactions) {
+      addressToNotifyMap[bt.addressHash] = 1;
+    }
+    for (const bt of transaction.networkFeeBaseTransactions) {
+      addressToNotifyMap[bt.addressHash] = 1;
+    }
+    return Object.keys(addressToNotifyMap);
+  }
+  getTransactionsAddressesToNotify(transactions: DbAppTransaction[]): string[] {
+    const addressToNotifyMap = {};
+    for (const transaction of transactions) {
+      for (const bt of transaction.inputBaseTransactions) {
+        addressToNotifyMap[bt.addressHash] = 1;
+      }
+      for (const bt of transaction.receiverBaseTransactions) {
+        addressToNotifyMap[bt.addressHash] = 1;
+      }
+      for (const bt of transaction.fullnodeFeeBaseTransactions) {
+        addressToNotifyMap[bt.addressHash] = 1;
+      }
+      for (const bt of transaction.networkFeeBaseTransactions) {
+        addressToNotifyMap[bt.addressHash] = 1;
+      }
+    }
+    return Object.keys(addressToNotifyMap);
+  }
   async eventHandler(event: SocketEvents, transactionEvents: any[]) {
     const msgPromises = [];
     if (!transactionEvents?.length) return;
-    const addressSubscribersMap = this.gateway.addressSubscribersMap || {};
-    const transactionSubscribersMap = this.gateway.transactionSubscribersMap || [];
 
     try {
       const transactionIds = transactionEvents.map(x => x.id);
       const transactionEntities = await this.getTransactionsById(transactionIds);
-      const totalTransactions = await this.getTotalTransactions();
-
+      const allAddressesToNotify = this.getTransactionsAddressesToNotify(transactionEntities);
+      const addressTotalTransactionCountMap = await this.getTotalTransactionCountMap(allAddressesToNotify);
       for (const transaction of transactionEntities) {
-        const receiverAddress = transaction.receiverBaseTransactions.length ? transaction.receiverBaseTransactions[0].addressHash : undefined;
+        const addressesToNotify = this.getTransactionAddressesToNotify(transaction);
+
         const eventMessage = new TransactionDto(transaction);
         this.logger.debug(`about to send event:${event} message: ${JSON.stringify(eventMessage)}`);
-
-        for (const [socketId, addressHash] of Object.entries(addressSubscribersMap)) {
-          if (addressHash === receiverAddress) {
-            msgPromises.push(this.gateway.sendMessageToRoom(socketId, `${SocketEvents.AddressTransactionsNotification}/${receiverAddress}`, eventMessage));
-            msgPromises.push(this.gateway.sendMessageToRoom(socketId, `${SocketEvents.AddressTransactionsNotification}/${receiverAddress}/total`, totalTransactions));
-          }
+        for (const addressToNotify of addressesToNotify) {
+          msgPromises.push(this.gateway.sendMessageToRoom(addressToNotify, `${SocketEvents.AddressTransactionsNotification}/${addressToNotify}`, eventMessage));
+          msgPromises.push(
+            this.gateway.sendMessageToRoom(
+              addressToNotify,
+              `${SocketEvents.AddressTransactionsNotification}/${addressToNotify}/total`,
+              addressTotalTransactionCountMap[addressToNotify],
+            ),
+          );
         }
 
-        for (const [socketId, hash] of Object.entries(transactionSubscribersMap)) {
-          if (hash === eventMessage.hash) {
-            msgPromises.push(this.gateway.sendMessageToRoom(socketId, `${SocketEvents.TransactionDetails}/${eventMessage.hash}`, eventMessage));
-          }
-        }
-
+        msgPromises.push(this.gateway.sendMessageToRoom(transaction.hash, `${SocketEvents.TransactionDetails}/${transaction.hash}`, eventMessage));
         msgPromises.push(this.gateway.sendBroadcast(SocketEvents.GeneralTransactionsNotification, eventMessage));
-        msgPromises.push(this.gateway.sendBroadcast(`${SocketEvents.GeneralTransactionsNotification}/total`, totalTransactions));
       }
 
       await Promise.all(msgPromises);
     } catch (error) {
       this.logger.error(`Failed to send to socket: ${error}`);
-      throw error;
     }
   }
 }
