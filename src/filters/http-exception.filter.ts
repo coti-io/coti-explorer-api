@@ -11,9 +11,9 @@ export class ExplorerExceptionFilter implements ExceptionFilter {
     const logger = new Logger('ExplorerErrorFilter');
     const { httpAdapter } = this.httpAdapterHost;
     const ctx = host.switchToHttp();
-    const httpStatus = exception instanceof ExplorerError ? exception.statusCode : HttpStatus.INTERNAL_SERVER_ERROR;
-    const status = exception instanceof ExplorerError ? exception.status : Status.STATUS_ERROR;
-    const message = exception instanceof ExplorerError ? exception.message : 'Internal server error';
+    const httpStatus = exception instanceof ExplorerError ? exception.statusCode : exception.status || HttpStatus.INTERNAL_SERVER_ERROR;
+    const status = exception instanceof ExplorerError ? exception.status : exception.status || Status.STATUS_ERROR;
+    const message = exception instanceof ExplorerError ? exception.message : exception?.response?.message?.toString() || 'Internal server error';
     const responseBody = {
       status,
       errorMessage: message,

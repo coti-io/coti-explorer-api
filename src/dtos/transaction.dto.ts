@@ -1,5 +1,5 @@
 import { Optional } from '@nestjs/common';
-import { Allow, IsNotEmpty, IsNumber, IsString, Max } from 'class-validator';
+import { Allow, IsNotEmpty, IsNumber, IsString, Max, Min } from 'class-validator';
 import { BaseTransactionEntity, DbAppTransaction, FullnodeFeeBaseTransaction, InputBaseTransaction, NetworkFeeBaseTransaction, ReceiverBaseTransaction } from 'src/entities';
 
 export class TransactionDto {
@@ -61,10 +61,12 @@ export class GetAddressTransactionsDto {
   @Optional()
   @IsNumber()
   @Max(50)
+  @Min(0)
   limit = 50;
 
   @Optional()
   @IsNumber()
+  @Min(0)
   offset = 0;
 }
 export class TransactionsResponseDto {
