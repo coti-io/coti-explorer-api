@@ -151,8 +151,6 @@ export class MysqlLiveService {
         .leftJoinAndSelect('transactions.fullnodeFeeBaseTransactions', 'fullnode_fee_base_transactions')
         .leftJoinAndSelect('transactions.networkFeeBaseTransactions', 'network_fee_base_transactions')
         .where(`transactions.id IN(${transactionIds.join(',')})`);
-      // TODO: return when we have an index
-      // .orderBy({ attachmentTime: 'DESC' })
       const [transactionsError, transactions] = await exec(query.getMany());
       if (transactionsError) {
         throw transactionsError;

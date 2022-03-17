@@ -19,8 +19,7 @@ export class TransactionService {
         .leftJoinAndSelect('transactions.receiverBaseTransactions', 'receiver_base_transactions')
         .leftJoinAndSelect('transactions.fullnodeFeeBaseTransactions', 'fullnode_fee_base_transactions')
         .leftJoinAndSelect('transactions.networkFeeBaseTransactions', 'network_fee_base_transactions')
-        // TODO: return when we have an index
-        // .orderBy({ attachmentTime: 'DESC' })
+        .orderBy({ attachmentTime: 'DESC' })
         .limit(limit)
         .offset(offset);
       const [transactionsError, transactions] = await exec(query.getMany());
@@ -60,8 +59,7 @@ export class TransactionService {
         .orWhere('network_fee_base_transactions.addressHash=:address', {
           address,
         })
-        // TODO: return when we have an index
-        // .orderBy({ attachmentTime: 'DESC' })
+        .orderBy({ attachmentTime: 'DESC' })
         .limit(limit)
         .offset(offset);
       const [transactionsError, transactions] = await exec(query.getMany());
