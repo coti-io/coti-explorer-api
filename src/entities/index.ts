@@ -8,3 +8,4 @@ export * from './transaction.entity';
 export * from './currencies.entity';
 export * from './address-balances.entity';
 export * from './address-transaction-counts.entity';
+export * from './transaction-addresses.entity';
