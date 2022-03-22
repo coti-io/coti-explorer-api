@@ -7,7 +7,7 @@ export class TransactionAddress extends BaseEntity {
   transactionId: number;
 
   @Column()
-  addressHash: string;
+  addressId: number;
 
   @Column()
   attachmentTime: number;

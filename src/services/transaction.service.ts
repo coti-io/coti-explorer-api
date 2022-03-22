@@ -1,4 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
+import { Addresses } from 'src/entities/addresses.entity';
 import { ExplorerError } from 'src/errors/explorer-error';
 import { getManager } from 'typeorm';
 import { TransactionDto, TransactionResponseDto, TransactionsResponseDto } from '../dtos/transaction.dto';
@@ -40,10 +41,17 @@ export class TransactionService {
   async getTransactionsByAddress(limit: number, offset: number, address: string): Promise<TransactionsResponseDto> {
     const manager = getManager('db_sync');
     try {
+      const [dbAddressError, dbAddress] = await exec(
+        manager.getRepository<Addresses>('addresses').createQueryBuilder('a').where('a.addressHash = :address', { address }).getOneOrFail(),
+      );
+      if (dbAddressError) {
+        throw dbAddressError;
+      }
+      const addressId = dbAddress.id;
       const transacitonAddressesQuery = manager
         .getRepository<TransactionAddress>('transaction_addresses')
         .createQueryBuilder('t')
-        .where('t.addressHash = :address', { address })
+        .where('t.addressId = :addressId', { addressId })
         .orderBy({ attachmentTime: 'DESC' })
         .limit(limit)
         .offset(offset);
