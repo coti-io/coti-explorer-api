@@ -18,6 +18,8 @@ export function dbsyncInit() {
       timezone: 'Z',
       connectTimeout: 60 * 60 * 1000,
       timeout: 60 * 60 * 1000,
+      supportBigNumbers: true,
+      bigNumberStrings: false,
     }),
   });
 }

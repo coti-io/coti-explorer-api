@@ -4,7 +4,7 @@ import { BaseTransactionEntity, DbAppTransaction, FullnodeFeeBaseTransaction, In
 
 export class TransactionDto {
   hash: string;
-  amount: string;
+  amount: number;
   type: TransactionType;
   baseTransactions: BaseTransactionDto[];
   leftParentHash: string;
@@ -29,9 +29,7 @@ export class TransactionDto {
       ...transaction.fullnodeFeeBaseTransactions.map(x => new FullnodeFeeBaseTransactionDto(x)),
       ...transaction.networkFeeBaseTransactions.map(x => new NetworkFeeBaseTransactionDto(x)),
     ];
-    this.attachmentTime = Number(transaction.attachmentTime);
-    this.createTime = Number(transaction.transactionCreateTime);
-    this.transactionConsensusUpdateTime = Number(transaction.transactionConsensusUpdateTime) === 0 ? null : Number(transaction.transactionConsensusUpdateTime);
+    this.createTime = transaction.transactionCreateTime;
     this.status = this.transactionConsensusUpdateTime ? TransactionStatus.CONFIRMED : TransactionStatus.ATTACHED_TO_DAG;
     delete transaction.id;
     delete transaction.inputBaseTransactions;
@@ -41,8 +39,6 @@ export class TransactionDto {
     delete transaction.transactionCreateTime;
     delete transaction.updateTime;
     delete transaction.createTime;
-    delete transaction.attachmentTime;
-    delete transaction.transactionConsensusUpdateTime;
     Object.assign(this, transaction);
   }
 }

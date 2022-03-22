@@ -13,7 +13,7 @@ export class AddressBalance extends BaseEntity {
   addressHash: string;
 
   @Column('decimal')
-  amount: string;
+  amount: number;
 
   @ManyToOne(() => Currency, currency => currency.addressBalance)
   @JoinColumn({ name: 'currencyId' })

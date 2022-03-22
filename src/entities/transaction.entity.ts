@@ -13,8 +13,8 @@ export class DbAppTransaction extends BaseEntity {
   @Column()
   index: number;
 
-  @Column('decimal')
-  amount: string;
+  @Column()
+  amount: number;
 
   @Column()
   attachmentTime: number;
@@ -38,13 +38,16 @@ export class DbAppTransaction extends BaseEntity {
   senderTrustScore: number;
 
   @Column()
+  trustChainTrustScore: number;
+
+  @Column()
   transactionConsensusUpdateTime: number;
 
   @Column()
   transactionDescription: string;
 
   @Column()
-  trustChainConsensus: number;
+  trustChainConsensus: boolean;
 
   @Column()
   type: TransactionType;

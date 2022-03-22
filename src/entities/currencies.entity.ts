@@ -11,7 +11,7 @@ export class Currency extends BaseEntity {
   hash: string;
 
   @Column('decimal')
-  amount: string;
+  amount: number;
 
   @OneToMany(() => AddressBalance, addressBalance => addressBalance.currency)
   addressBalance: AddressBalance[];
