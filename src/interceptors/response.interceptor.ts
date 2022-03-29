@@ -4,7 +4,7 @@ import { map } from 'rxjs/operators';
 import { Status } from 'src/utils/http-constants';
 
 @Injectable()
-export class TransactionInterceptor<T> implements NestInterceptor<T, Response> {
+export class ResponseInterceptor<T> implements NestInterceptor<T, Response> {
   intercept(context: ExecutionContext, next: CallHandler): Observable<Response> {
     return next.handle().pipe(
       map(data => {

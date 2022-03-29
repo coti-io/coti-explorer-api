@@ -1,16 +1,16 @@
 import { Body, Controller, Get, Post, UseFilters, UseInterceptors } from '@nestjs/common';
 import { ExplorerExceptionFilter } from 'src/filters/http-exception.filter';
-import { TransactionInterceptor } from 'src/interceptors/transaction.interceptor';
+import { ResponseInterceptor } from 'src/interceptors/response.interceptor';
 import { TransactionService } from 'src/services';
-import { GetAddressTransactionsDto, GetTransactionByHashRequestDto, TransactionResponseDto, TransactionsResponseDto } from '../dtos/transaction.dto';
+import { GetAddressTransactionsDto, GetNodeTransactionsDto, GetTransactionByHashRequestDto, TransactionResponseDto, TransactionsResponseDto } from '../dtos';
 
-@UseInterceptors(TransactionInterceptor)
+@UseInterceptors(ResponseInterceptor)
 @UseFilters(ExplorerExceptionFilter)
 @Controller('transaction')
 export class TransactionController {
   constructor(private readonly transactionService: TransactionService) {}
 
-  @Get('lastTransactions')
+  @Get('last-transactions')
   async getTransactions(): Promise<TransactionsResponseDto> {
     const transactions = await this.transactionService.getTransactions(20, 0);
     return transactions;
@@ -22,9 +22,15 @@ export class TransactionController {
     return transactions;
   }
 
-  @Post('addressTransactions')
+  @Post('address-transactions')
   async getAddressTransactions(@Body() body: GetAddressTransactionsDto): Promise<TransactionsResponseDto> {
     const transactions = await this.transactionService.getTransactionsByAddress(body.limit, body.offset, body.address);
+    return transactions;
+  }
+
+  @Post('node-ransactions')
+  async getNodeTransactions(@Body() body: GetNodeTransactionsDto): Promise<TransactionsResponseDto> {
+    const transactions = await this.transactionService.getTransactionByNodeHash(body.limit, body.offset, body.address);
     return transactions;
   }
 }

@@ -1,6 +1,6 @@
 import { BaseTransactionName } from 'src/dtos/transaction.dto';
 import { Column, Entity } from 'typeorm';
-import { BaseEntity } from './base.entity';
+import { BaseEntity } from '../base.entity';
 
 @Entity()
 export class BaseTransactionEntity extends BaseEntity {

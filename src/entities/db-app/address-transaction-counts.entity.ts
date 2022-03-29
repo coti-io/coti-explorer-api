@@ -1,7 +1,8 @@
 import { Column, Entity } from 'typeorm';
-import { BaseEntity } from './base.entity';
+import { BaseEntity } from '../base.entity';
+import { DbAppEntitiesNames } from './entities.names';
 
-@Entity('address_transaction_counts')
+@Entity(DbAppEntitiesNames.addressTransactionCounts)
 export class AddressTransactionCount extends BaseEntity {
   @Column()
   count: number;

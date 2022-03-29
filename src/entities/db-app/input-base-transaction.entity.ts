@@ -1,7 +1,8 @@
 import { Column, Entity, JoinColumn, ManyToOne } from 'typeorm';
 import { BaseTransactionEntity, DbAppTransaction } from '.';
+import { DbAppEntitiesNames } from './entities.names';
 
-@Entity('input_base_transactions')
+@Entity(DbAppEntitiesNames.inputBaseTransactions)
 export class InputBaseTransaction extends BaseTransactionEntity {
   @Column()
   inputCreateTime: number;

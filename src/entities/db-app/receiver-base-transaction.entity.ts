@@ -1,7 +1,8 @@
 import { Column, Entity, JoinColumn, ManyToOne } from 'typeorm';
 import { BaseTransactionEntity, DbAppTransaction } from '.';
+import { DbAppEntitiesNames } from './entities.names';
 
-@Entity('receiver_base_transactions')
+@Entity(DbAppEntitiesNames.receiverBaseTransactions)
 export class ReceiverBaseTransaction extends BaseTransactionEntity {
   @Column('decimal')
   originalAmount: number;

@@ -2,10 +2,11 @@ import { BaseTransactionEvent, BaseTransactionName, TransactionType } from 'src/
 import { exec } from 'src/utils/promise-helper';
 import { Column, Entity, getManager, OneToMany } from 'typeorm';
 import { FullnodeFeeBaseTransaction, NetworkFeeBaseTransaction, ReceiverBaseTransaction } from '.';
-import { BaseEntity } from './base.entity';
+import { BaseEntity } from '../base.entity';
+import { DbAppEntitiesNames } from './entities.names';
 import { InputBaseTransaction } from './input-base-transaction.entity';
 
-@Entity('transactions')
+@Entity(DbAppEntitiesNames.transactions)
 export class DbAppTransaction extends BaseEntity {
   @Column()
   hash: string;
@@ -93,7 +94,7 @@ export const getConfirmedTransactions = () => {
 };
 
 export async function getRelatedInputs(transactionId: number): Promise<BaseTransactionEvent[]> {
-  const [ibtsError, ibts] = await exec(getManager('db_sync').getRepository<InputBaseTransaction>('input_base_transactions').find({ transactionId }));
+  const [ibtsError, ibts] = await exec(getManager('db_app').getRepository<InputBaseTransaction>('input_base_transactions').find({ transactionId }));
   if (ibtsError) throw ibtsError;
 
   return ibts.map(ibt => {

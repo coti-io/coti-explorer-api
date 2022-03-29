@@ -1,7 +1,8 @@
 import { Column, Entity } from 'typeorm';
-import { BaseEntity } from './base.entity';
+import { BaseEntity } from '../base.entity';
+import { DbAppEntitiesNames } from './entities.names';
 
-@Entity('transaction_addresses')
+@Entity(DbAppEntitiesNames.transactionsAddresses)
 export class TransactionAddress extends BaseEntity {
   @Column()
   transactionId: number;

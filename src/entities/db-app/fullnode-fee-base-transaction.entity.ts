@@ -1,6 +1,7 @@
 import { Column, Entity, JoinColumn, ManyToOne } from 'typeorm';
 import { BaseTransactionEntity, DbAppTransaction } from '.';
-@Entity('fullnode_fee_base_transactions')
+import { DbAppEntitiesNames } from './entities.names';
+@Entity(DbAppEntitiesNames.fullnodeFeeBaseTransactions)
 export class FullnodeFeeBaseTransaction extends BaseTransactionEntity {
   @Column('decimal')
   originalAmount: number;

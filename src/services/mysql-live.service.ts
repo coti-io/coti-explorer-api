@@ -54,7 +54,7 @@ export class MysqlLiveService {
   liveConnection: any;
 
   constructor(private gateway: AppGateway, private readonly configService: ConfigService) {
-    this.init();
+    // this.init();
   }
 
   async init() {
@@ -141,7 +141,7 @@ export class MysqlLiveService {
   }
 
   async getTransactionsById(transactionIds: string[]) {
-    const manager = getManager('db_sync');
+    const manager = getManager('db_app');
     try {
       const query = manager
         .getRepository<DbAppTransaction>('transactions')
