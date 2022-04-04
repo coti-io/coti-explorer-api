@@ -1,7 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { access } from 'fs';
-import { x } from 'joi';
-import { SearchRequestDto, SearchResponseDto, Node, Token } from 'src/dtos';
+import { SearchRequestDto, SearchResponseDto, NodeSearchResult, TokenSearchResult } from 'src/dtos';
 import { Currency, DbAppTransaction, OriginatorCurrencyData } from 'src/entities';
 import { DbAppEntitiesNames } from 'src/entities/db-app/entities.names';
 import { ExplorerAppEntitiesNames, NodeEntity, TokenEntity } from 'src/entities/explorer';
@@ -53,7 +52,7 @@ export class SearchService {
         throw nodesDatasError;
       }
 
-      return { nodes: nodes.map(n => new Node(n)), tokens: currencies.map(c => new Token(c, hashToTokenMap[c.hash])) };
+      return { nodes: nodes.map(n => new NodeSearchResult(n)), tokens: currencies.map(c => new TokenSearchResult(c, hashToTokenMap[c.hash])) };
     } catch (error) {
       this.logger.error(error);
       throw new ExplorerError({

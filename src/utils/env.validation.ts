@@ -16,6 +16,8 @@ export function validate() {
       DB_USER: Joi.string().exist(),
       DB_PASSWORD: Joi.string().exist(),
       DB_NAME: Joi.string().exist(),
+
+      COTI_CURRENCY_HASH: Joi.string().exist(),
     }),
     validationOptions: {
       allowUnknown: true,

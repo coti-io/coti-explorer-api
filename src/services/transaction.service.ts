@@ -1,15 +1,17 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { TransactionConfirmationTimeResponseDto } from 'src/dtos';
 
-import { ExplorerError } from 'src/errors/explorer-error';
+import { ExplorerBadRequestError, ExplorerError } from 'src/errors/explorer-error';
 import { getManager, In } from 'typeorm';
 import { TransactionDto, TransactionResponseDto, TransactionsResponseDto } from '../dtos/transaction.dto';
 import { Addresses, DbAppTransaction, getTransactionCount, TransactionAddress } from '../entities/';
 import { exec } from '../utils/promise-helper';
+import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class TransactionService {
   private readonly logger = new Logger('TransactionService');
+  constructor(private readonly configService: ConfigService) {}
 
   async getTransactions(limit: number, offset: number): Promise<TransactionsResponseDto> {
     const manager = getManager('db_app');
@@ -43,9 +45,7 @@ export class TransactionService {
       return new TransactionsResponseDto(transactions.length, transactions);
     } catch (error) {
       this.logger.error(error);
-      throw new ExplorerError({
-        message: error.message,
-      });
+      throw new ExplorerError(error);
     }
   }
 
@@ -96,9 +96,7 @@ export class TransactionService {
       return new TransactionsResponseDto(totalTransactions, transactions);
     } catch (error) {
       this.logger.error(error);
-      throw new ExplorerError({
-        message: error.message,
-      });
+      throw new ExplorerError(error);
     }
   }
 
@@ -124,9 +122,7 @@ export class TransactionService {
       };
     } catch (error) {
       this.logger.error(error);
-      throw new ExplorerError({
-        message: error.message,
-      });
+      throw new ExplorerError(error);
     }
   }
 
@@ -135,12 +131,66 @@ export class TransactionService {
     try {
       const query = manager
         .getRepository<DbAppTransaction>('transactions')
-        .createQueryBuilder('transactions')
-        .leftJoinAndSelect('transactions.inputBaseTransactions', 'input_base_transactions')
-        .leftJoinAndSelect('transactions.receiverBaseTransactions', 'receiver_base_transactions')
-        .leftJoinAndSelect('transactions.fullnodeFeeBaseTransactions', 'fullnode_fee_base_transactions')
-        .leftJoinAndSelect('transactions.networkFeeBaseTransactions', 'network_fee_base_transactions')
-        .where('transactions.nodeHash=:nodeHash', { nodeHash })
+        .createQueryBuilder('t')
+        .leftJoinAndSelect('t.inputBaseTransactions', 'ibt')
+        .leftJoinAndSelect('t.receiverBaseTransactions', 'rbt')
+        .leftJoinAndSelect('t.fullnodeFeeBaseTransactions', 'ffbt')
+        .leftJoinAndSelect('t.networkFeeBaseTransactions', 'nfbt')
+        .where('t.nodeHash=:nodeHash', { nodeHash })
+        .orderBy({ attachmentTime: 'DESC' })
+        .limit(limit)
+        .offset(offset);
+      const [transactionsError, transactions] = await exec(query.getMany());
+
+      if (transactionsError) {
+        throw transactionsError;
+      }
+
+      const countQuery = manager.getRepository<DbAppTransaction>('transactions').createQueryBuilder('t').select('COUNT(t.id) as count').where('t.nodeHash=:nodeHash', { nodeHash });
+
+      const [countError, countResponse] = await exec(countQuery.getRawOne<{ count: number }>());
+
+      if (countError) {
+        throw countError;
+      }
+
+      return new TransactionsResponseDto(countResponse.count, transactions);
+    } catch (error) {
+      this.logger.error(error);
+      throw new ExplorerError(error);
+    }
+  }
+
+  async getTransactionByCurrencyHash(limit: number, offset: number, currencyHash: string): Promise<TransactionsResponseDto> {
+    const manager = getManager('db_app');
+    try {
+      if (currencyHash === this.configService.get('COTI_CURRENCY_HASH')) {
+        throw new ExplorerBadRequestError(`Currency with currency hash ${currencyHash} is not supported`);
+      }
+      const queryTxIds = manager
+        .getRepository<DbAppTransaction>('transactions')
+        .createQueryBuilder('t')
+        .innerJoinAndSelect('t.receiverBaseTransactions', 'rbt', `rbt.currencyHash = :currencyHash`, { currencyHash })
+        .select('t.id id')
+        .orderBy({ attachmentTime: 'DESC' })
+        .limit(limit)
+        .offset(offset);
+      const [transactionsIdsError, transactionsIds] = await exec(queryTxIds.getRawMany<{ id: number }>());
+
+      if (transactionsIdsError) {
+        throw transactionsIdsError;
+      }
+
+      const ids = transactionsIds.map(tx => tx.id);
+
+      const query = manager
+        .getRepository<DbAppTransaction>('transactions')
+        .createQueryBuilder('t')
+        .leftJoinAndSelect('t.inputBaseTransactions', 'ibt')
+        .leftJoinAndSelect('t.receiverBaseTransactions', 'rbt')
+        .leftJoinAndSelect('t.fullnodeFeeBaseTransactions', 'ffbt')
+        .leftJoinAndSelect('t.networkFeeBaseTransactions', 'nfbt')
+        .where({ id: In(ids) })
         .orderBy({ attachmentTime: 'DESC' })
         .limit(limit)
         .offset(offset);
@@ -151,12 +201,12 @@ export class TransactionService {
       }
 
       const countQuery = manager
-        .getRepository<{ count: number }>('transactions')
-        .createQueryBuilder('transactions')
-        .select('COUNT(DISTINCT *) as count')
-        .where('transactions.nodeHash=:nodeHash', { nodeHash });
+        .getRepository<DbAppTransaction>('transactions')
+        .createQueryBuilder('t')
+        .select('COUNT(DISTINCT t.id) as count')
+        .innerJoin('t.receiverBaseTransactions', 'rbt', `rbt.currencyHash = :currencyHash`, { currencyHash });
 
-      const [countError, countResponse] = await exec(countQuery.getOne());
+      const [countError, countResponse] = await exec(countQuery.getRawOne<{ count: number }>());
 
       if (countError) {
         throw countError;
@@ -165,9 +215,7 @@ export class TransactionService {
       return new TransactionsResponseDto(countResponse.count, transactions);
     } catch (error) {
       this.logger.error(error);
-      throw new ExplorerError({
-        message: error.message,
-      });
+      throw new ExplorerError(error);
     }
   }
 
@@ -176,14 +224,14 @@ export class TransactionService {
     try {
       const query = manager
         .getRepository<DbAppTransaction>('transactions')
-        .createQueryBuilder('transactions')
+        .createQueryBuilder('t')
         .select(
           `
-      AVG(transactions.transactionConsensusUpdateTime - transactions.attachmentTime)/1000 avg, 
-      MIN(transactions.transactionConsensusUpdateTime - transactions.attachmentTime)/1000 min,
-      MAX(transactions.transactionConsensusUpdateTime - transactions.attachmentTime)/1000 max`,
+      AVG(t.transactionConsensusUpdateTime - t.attachmentTime)/1000 avg, 
+      MIN(t.transactionConsensusUpdateTime - t.attachmentTime)/1000 min,
+      MAX(t.transactionConsensusUpdateTime - t.attachmentTime)/1000 max`,
         )
-        .where(`transactions.type <> 'ZeroSpend' AND transactions.transactionConsensusUpdateTime IS NOT NULL AND transactions.updateTime > DATE_ADD(NOW(), INTERVAL -24 HOUR)`);
+        .where(`t.type <> 'ZeroSpend' AND t.transactionConsensusUpdateTime IS NOT NULL AND t.updateTime > DATE_ADD(NOW(), INTERVAL -24 HOUR)`);
       const [confirmationStatisticError, confirmationStatistic] = await exec(query.getRawOne<TransactionConfirmationTimeResponseDto>());
 
       if (confirmationStatisticError) {
@@ -192,9 +240,7 @@ export class TransactionService {
       return confirmationStatistic;
     } catch (error) {
       this.logger.error(error);
-      throw new ExplorerError({
-        message: error.message,
-      });
+      throw new ExplorerError(error);
     }
   }
 }

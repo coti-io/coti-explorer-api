@@ -1,14 +1,14 @@
-import { IsString, MaxLength } from 'class-validator';
-import { Currency, OriginatorCurrencyData } from 'src/entities';
+import { IsNotEmpty, IsString, MaxLength } from 'class-validator';
+import { Currency } from 'src/entities';
 import { NodeEntity } from 'src/entities/explorer';
 import { TokenEntity } from 'src/entities/explorer/tokens.entity';
 
 export class SearchResponseDto {
-  tokens: Token[];
-  nodes: Node[];
+  tokens: TokenSearchResult[];
+  nodes: NodeSearchResult[];
 }
 
-export class Token {
+export class TokenSearchResult {
   name: string;
   symbol: string;
   iconUrl: string;
@@ -28,7 +28,7 @@ export class Token {
     this.currencyHash = currency.hash;
   }
 }
-export class Node {
+export class NodeSearchResult {
   name: string;
   iconUrl: string;
 
