@@ -41,8 +41,8 @@ export class MysqlLiveService {
   settings = {
     host: this.configService.get<string>('DB_SYNC_HOST'),
     port: this.configService.get<number>('DB_SYNC_PORT'),
-    user: this.configService.get<string>('DB_SYNC_USER'),
-    password: this.configService.get<string>('DB_SYNC_PASSWORD'),
+    user: this.configService.get<string>('DB_SYNC_USER_LIVE'),
+    password: this.configService.get<string>('DB_SYNC_PASSWORD_LIVE'),
     database: this.configService.get<string>('DB_SYNC_NAME'),
     serverId: Math.floor(Math.random() * 100000 + 1),
     pool: true,
