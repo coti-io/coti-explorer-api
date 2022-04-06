@@ -58,7 +58,7 @@ export class TransactionService {
         throw dbAddressError;
       }
       const addressId = dbAddress.id;
-      const transacitonAddressesQuery = manager
+      const transactionAddressesQuery = manager
         .getRepository<TransactionAddress>('transaction_addresses')
         .createQueryBuilder('t')
         .where('t.addressId = :addressId', { addressId })
@@ -66,7 +66,7 @@ export class TransactionService {
         .limit(limit)
         .offset(offset);
 
-      const [transactionsAddressesError, transactionsAddresses] = await exec(transacitonAddressesQuery.getMany());
+      const [transactionsAddressesError, transactionsAddresses] = await exec(transactionAddressesQuery.getMany());
 
       if (transactionsAddressesError) {
         throw transactionsAddressesError;

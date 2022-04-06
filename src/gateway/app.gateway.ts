@@ -35,13 +35,17 @@ export class AppGateway implements OnGatewayInit, OnGatewayConnection, OnGateway
     try {
       if (!payload) return;
       const { address, hash } = payload;
+      let addressLog = '';
+      let hashLog = '';
       if (address) {
         client.join(address);
+        addressLog = `[address ${address}]`;
       }
       if (hash) {
         client.join(hash);
+        hashLog = `[hash ${hash}]`;
       }
-      this.logger.log(`[subscribe][socketId: ${client.id}]`);
+      this.logger.log(`[subscribe][socketId: ${client.id}]${addressLog}${hashLog}`);
     } catch (error) {
       this.logger.warn('socket subscribe failed');
     }
@@ -51,9 +55,17 @@ export class AppGateway implements OnGatewayInit, OnGatewayConnection, OnGateway
   unsubscribe(client: Socket, payload: { address?: string; hash?: string }) {
     try {
       const { address, hash } = payload;
-      if (address) client.leave(address);
-      if (hash) client.leave(hash);
-      this.logger.log(`[unsubscribe][socketId: ${client.id}]`);
+      let addressLog = '';
+      let hashLog = '';
+      if (address) {
+        client.leave(address);
+        addressLog = `[address ${address}]`;
+      }
+      if (hash) {
+        client.leave(hash);
+        hashLog = `[hash ${hash}]`;
+      }
+      this.logger.log(`[unsubscribe][socketId: ${client.id}]${addressLog}${hashLog}`);
     } catch (error) {
       this.logger.warn('socket unsubscribe failed');
     }
