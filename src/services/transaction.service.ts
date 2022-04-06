@@ -1,7 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Addresses } from 'src/entities/addresses.entity';
 import { ExplorerError } from 'src/errors/explorer-error';
-import { getManager } from 'typeorm';
+import { getManager, In } from 'typeorm';
 import { TransactionDto, TransactionResponseDto, TransactionsResponseDto } from '../dtos/transaction.dto';
 import { DbAppTransaction, getTransactionCount, TransactionAddress } from '../entities/';
 import { exec } from '../utils/promise-helper';
@@ -13,6 +13,18 @@ export class TransactionService {
   async getTransactions(limit: number, offset: number): Promise<TransactionsResponseDto> {
     const manager = getManager('db_sync');
     try {
+      const idsQuery = manager
+        .getRepository<DbAppTransaction>('transactions')
+        .createQueryBuilder('transactions')
+        .select('id')
+        .orderBy({ attachmentTime: 'DESC' })
+        .limit(limit)
+        .offset(offset);
+      const [transactionsIdsError, transactionsIds] = await exec(idsQuery.getRawMany<{ id: number }>());
+
+      if (transactionsIdsError) {
+        throw transactionsIdsError;
+      }
       const query = manager
         .getRepository<DbAppTransaction>('transactions')
         .createQueryBuilder('transactions')
@@ -20,16 +32,14 @@ export class TransactionService {
         .leftJoinAndSelect('transactions.receiverBaseTransactions', 'receiver_base_transactions')
         .leftJoinAndSelect('transactions.fullnodeFeeBaseTransactions', 'fullnode_fee_base_transactions')
         .leftJoinAndSelect('transactions.networkFeeBaseTransactions', 'network_fee_base_transactions')
-        .orderBy({ attachmentTime: 'DESC' })
-        .limit(limit)
-        .offset(offset);
+        .where({ id: In(transactionsIds.map(t => t.id)) })
+        .orderBy({ attachmentTime: 'DESC' });
       const [transactionsError, transactions] = await exec(query.getMany());
 
       if (transactionsError) {
         throw transactionsError;
       }
-      const count = 0;
-      return new TransactionsResponseDto(count, transactions);
+      return new TransactionsResponseDto(transactions.length, transactions);
     } catch (error) {
       this.logger.error(error);
       throw new ExplorerError({
