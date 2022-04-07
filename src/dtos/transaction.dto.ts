@@ -1,6 +1,6 @@
 import { Optional } from '@nestjs/common';
 import { Allow, IsNotEmpty, IsNumber, IsString, Max, Min } from 'class-validator';
-import { BaseTransactionEntity, DbAppTransaction, FullnodeFeeBaseTransaction, InputBaseTransaction, NetworkFeeBaseTransaction, ReceiverBaseTransaction } from 'src/entities';
+import { BaseTransactionEntity, DbAppTransaction, FullnodeFeeBaseTransaction, InputBaseTransaction, NetworkFeeBaseTransaction, ReceiverBaseTransaction } from 'src/entities/db-app';
 
 export class TransactionDto {
   hash: string;

@@ -2,7 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import LiveMysql from 'mysql-live-select';
 import { TransactionDto } from 'src/dtos/transaction.dto';
-import { DbAppTransaction, getConfirmedTransactions, getNewTransactions, getTransactionsCount } from 'src/entities';
+import { DbAppTransaction, getConfirmedTransactions, getNewTransactions, getTransactionsCount } from 'src/entities/db-app';
 import { AppGateway } from 'src/gateway/app.gateway';
 import { getManager } from 'typeorm';
 import { exec } from 'src/utils/promise-helper';
@@ -39,11 +39,11 @@ type Diff = {
 export class MysqlLiveService {
   private readonly logger = new Logger('MysqlLiveService');
   settings = {
-    host: this.configService.get<string>('DB_SYNC_HOST'),
-    port: this.configService.get<number>('DB_SYNC_PORT'),
-    user: this.configService.get<string>('DB_SYNC_USER_LIVE'),
-    password: this.configService.get<string>('DB_SYNC_PASSWORD_LIVE'),
-    database: this.configService.get<string>('DB_SYNC_NAME'),
+    host: this.configService.get<string>('DB_APP_HOST'),
+    port: this.configService.get<number>('DB_APP_PORT'),
+    user: this.configService.get<string>('DB_APP_USER_LIVE'),
+    password: this.configService.get<string>('DB_APP_PASSWORD_LIVE'),
+    database: this.configService.get<string>('DB_APP_NAME'),
     serverId: Math.floor(Math.random() * 100000 + 1),
     pool: true,
     minInterval: 200,

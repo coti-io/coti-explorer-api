@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ExplorerResponse, TokenInfoRequestDto, TokenInfoResponseDto } from 'src/dtos';
-import { Currency } from 'src/entities';
+import { Currency } from 'src/entities/db-app';
 import { DbAppEntitiesNames } from 'src/entities/db-app/entities.names';
 import { ExplorerAppEntitiesNames, TokenEntity } from 'src/entities/explorer';
 

@@ -4,7 +4,7 @@ import { TransactionConfirmationTimeResponseDto } from 'src/dtos';
 import { ExplorerBadRequestError, ExplorerError } from 'src/errors/explorer-error';
 import { getManager, In } from 'typeorm';
 import { TransactionDto, TransactionResponseDto, TransactionsResponseDto } from '../dtos/transaction.dto';
-import { Addresses, DbAppTransaction, getTransactionCount, TransactionAddress } from '../entities/';
+import { Addresses, DbAppTransaction, getTransactionCount, TransactionAddress } from '../entities/db-app';
 import { exec } from '../utils/promise-helper';
 import { ConfigService } from '@nestjs/config';
 

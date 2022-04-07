@@ -1,5 +1,5 @@
 import { IsNotEmpty, IsString, MaxLength } from 'class-validator';
-import { Currency } from 'src/entities';
+import { Currency } from 'src/entities/db-app';
 import { NodeEntity } from 'src/entities/explorer';
 import { TokenEntity } from 'src/entities/explorer/tokens.entity';
 

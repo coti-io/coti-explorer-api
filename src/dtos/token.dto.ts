@@ -1,5 +1,5 @@
 import { IsNotEmpty, IsString } from 'class-validator';
-import { Currency } from '../entities';
+import { Currency } from '../entities/db-app';
 import { TokenEntity } from '../entities/explorer';
 
 export class TokenInfoRequestDto {

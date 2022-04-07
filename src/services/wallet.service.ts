@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { WalletCountResponseDto } from 'src/dtos';
-import { DbAppTransaction } from 'src/entities';
+import { DbAppTransaction } from 'src/entities/db-app';
 
 import { ExplorerError } from 'src/errors/explorer-error';
 import { getManager } from 'typeorm';

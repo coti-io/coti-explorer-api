@@ -5,7 +5,7 @@ import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import helmet from 'helmet';
 import { AppModule } from './app.module';
 import { appModuleConfig } from './configurations';
-import { SocketIoAdapter } from './socket-io-adapter';
+import { RedisIoAdapter } from './redis-io-adapter';
 
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule, appModuleConfig);
@@ -18,10 +18,12 @@ async function bootstrap() {
       whitelist: true,
     }),
   );
-  app.useWebSocketAdapter(new SocketIoAdapter(app));
+  const redisIoAdapter = new RedisIoAdapter(app);
+  await redisIoAdapter.connectToRedis();
+  app.useWebSocketAdapter(redisIoAdapter);
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('api', app, document);
-  await app.listen(3000);
+  await app.listen(3002);
 }
 
 bootstrap();

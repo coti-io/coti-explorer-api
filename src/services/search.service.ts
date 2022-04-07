@@ -1,7 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { access } from 'fs';
 import { SearchRequestDto, SearchResponseDto, NodeSearchResult, TokenSearchResult } from 'src/dtos';
-import { Currency, DbAppTransaction, OriginatorCurrencyData } from 'src/entities';
+import { Currency, DbAppTransaction, OriginatorCurrencyData } from 'src/entities/db-app';
 import { DbAppEntitiesNames } from 'src/entities/db-app/entities.names';
 import { ExplorerAppEntitiesNames, NodeEntity, TokenEntity } from 'src/entities/explorer';
 
