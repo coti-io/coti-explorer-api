@@ -1,6 +1,6 @@
 {
   "collection": "@nestjs/schematics",
-  "sourceRoot": "src",
+  "sourceRoot": "apps/explorer-api/src",
   "compilerOptions": {
     "plugins": [
       {
@@ -10,6 +10,39 @@
           "introspectComments": true
         }
       }
-    ]
-  }
+    ],
+    "webpack": true,
+    "tsConfigPath": "apps/explorer-api/tsconfig.app.json"
+  },
+  "projects": {
+    "shared": {
+      "type": "library",
+      "root": "libs/shared",
+      "entryFile": "index",
+      "sourceRoot": "libs/shared/src",
+      "compilerOptions": {
+        "tsConfigPath": "libs/shared/tsconfig.lib.json"
+      }
+    },
+    "explorer-api": {
+      "type": "application",
+      "root": "apps/explorer-api",
+      "entryFile": "main",
+      "sourceRoot": "apps/explorer-api/src",
+      "compilerOptions": {
+        "tsConfigPath": "apps/explorer-api/tsconfig.app.json"
+      }
+    },
+    "live-app": {
+      "type": "application",
+      "root": "apps/live-app",
+      "entryFile": "main",
+      "sourceRoot": "apps/live-app/src",
+      "compilerOptions": {
+        "tsConfigPath": "apps/live-app/tsconfig.app.json"
+      }
+    }
+  },
+  "monorepo": true,
+  "root": "apps/explorer-api"
 }
