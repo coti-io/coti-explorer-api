@@ -1,10 +1,13 @@
 import { Module } from '@nestjs/common';
-import { LiveAppController } from './live-app.controller';
-import { LiveAppService } from './live-app.service';
+import { dbAppInit, explorerDbInit, validate } from './utils';
+import { ConfigService } from '@nestjs/config';
+
+import { AppGateway } from './gateway';
+import { services } from './services';
 
 @Module({
-  imports: [],
-  controllers: [LiveAppController],
-  providers: [LiveAppService],
+  imports: [validate(), dbAppInit(), explorerDbInit()],
+  controllers: [],
+  providers: [ConfigService, AppGateway, ...services],
 })
 export class LiveAppModule {}

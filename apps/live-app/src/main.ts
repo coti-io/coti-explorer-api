@@ -9,7 +9,7 @@ import { RedisIoAdapter } from './redis-io-adapter';
 
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(LiveAppModule, appModuleConfig);
-  const config = new DocumentBuilder().setTitle('Explorer API').setDescription('The explorer API description').setVersion('1.0').build();
+  const config = new DocumentBuilder().setTitle('Explorer API Live').setVersion('1.0').build();
   app.enableCors();
   app.use(helmet());
 

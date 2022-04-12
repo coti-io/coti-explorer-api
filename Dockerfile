@@ -3,7 +3,7 @@ WORKDIR /app
 COPY ./package*.json ./
 RUN npm install
 COPY . .
-RUN npm run build
+RUN npm run build-${APPLICATION_NAME}
 
 
 FROM node:16
@@ -11,4 +11,4 @@ WORKDIR /app
 COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/package*.json ./
 RUN npm install --only=production
-CMD ["npm", "run", "start:prod"]
+CMD ["npm", "run", "start-${APPLICATION_NAME}:prod"]

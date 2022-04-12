@@ -3,7 +3,7 @@ import * as Joi from 'joi';
 
 export function validate() {
   return ConfigModule.forRoot({
-    envFilePath: '.env.explorer-api',
+    envFilePath: '.env.live-app',
     isGlobal: true,
     validationSchema: Joi.object({
       DB_APP_HOST: Joi.string().exist(),
