@@ -3,7 +3,9 @@ import { TransactionConfirmationTimeResponseDto, WalletCountResponseDto } from '
 import { ExplorerExceptionFilter } from '../filters';
 import { ResponseInterceptor } from '../interceptors';
 import { TransactionService, WalletService } from '../services';
+import { ApiTags } from '@nestjs/swagger';
 
+@ApiTags('Statistics')
 @UseInterceptors(ResponseInterceptor)
 @UseFilters(ExplorerExceptionFilter)
 @Controller('statistic')

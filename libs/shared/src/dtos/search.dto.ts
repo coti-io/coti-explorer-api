@@ -1,4 +1,4 @@
-import { IsNotEmpty, IsString, MaxLength } from 'class-validator';
+import { IsString, MaxLength } from 'class-validator';
 import { Currency } from '../entities/db-app';
 import { NodeEntity, TokenEntity } from '../entities/explorer';
 
@@ -10,16 +10,14 @@ export class SearchResponseDto {
 export class TokenSearchResult {
   name: string;
   symbol: string;
-  iconUrl: string;
   description: string;
   originatorHash: string;
-  totalSupply: number;
+  totalSupply: string;
   scale: number;
   currencyHash: string;
   constructor(currency: Currency, toekn: TokenEntity) {
     this.name = currency.originatorCurrencyData.name;
     this.symbol = currency.originatorCurrencyData.symbol;
-    this.iconUrl = toekn?.iconUrl;
     this.description = currency.originatorCurrencyData.description;
     this.originatorHash = currency.originatorCurrencyData.originatorHash;
     this.totalSupply = currency.originatorCurrencyData.totalSupply;
@@ -29,11 +27,9 @@ export class TokenSearchResult {
 }
 export class NodeSearchResult {
   name: string;
-  iconUrl: string;
 
   constructor(node: NodeEntity) {
     this.name = node.name;
-    this.iconUrl = node.iconUrl;
   }
 }
 

@@ -12,6 +12,7 @@ import {
   getTransactionCount,
   TransactionAddress,
   exec,
+  getTransactionsById,
 } from '@app/shared';
 import { ConfigService } from '@nestjs/config';
 
@@ -35,16 +36,9 @@ export class TransactionService {
       if (transactionsIdsError) {
         throw transactionsIdsError;
       }
-      const query = manager
-        .getRepository<DbAppTransaction>('transactions')
-        .createQueryBuilder('transactions')
-        .leftJoinAndSelect('transactions.inputBaseTransactions', 'input_base_transactions')
-        .leftJoinAndSelect('transactions.receiverBaseTransactions', 'receiver_base_transactions')
-        .leftJoinAndSelect('transactions.fullnodeFeeBaseTransactions', 'fullnode_fee_base_transactions')
-        .leftJoinAndSelect('transactions.networkFeeBaseTransactions', 'network_fee_base_transactions')
-        .where({ id: In(transactionsIds.map(t => t.id)) })
-        .orderBy({ attachmentTime: 'DESC' });
-      const [transactionsError, transactions] = await exec(query.getMany());
+
+      const ids = transactionsIds.map(t => t.id);
+      const [transactionsError, transactions] = await exec(getTransactionsById(ids));
 
       if (transactionsError) {
         throw transactionsError;
@@ -80,16 +74,7 @@ export class TransactionService {
         throw transactionsAddressesError;
       }
       const transactionIds = transactionsAddresses.map(ta => ta.transactionId);
-      const query = manager
-        .getRepository<DbAppTransaction>('transactions')
-        .createQueryBuilder('transactions')
-        .innerJoinAndSelect('transactions.inputBaseTransactions', 'input_base_transactions')
-        .leftJoinAndSelect('transactions.receiverBaseTransactions', 'receiver_base_transactions')
-        .leftJoinAndSelect('transactions.fullnodeFeeBaseTransactions', 'fullnode_fee_base_transactions')
-        .leftJoinAndSelect('transactions.networkFeeBaseTransactions', 'network_fee_base_transactions')
-        .where(`transactions.id IN(${transactionIds.join(',')})`)
-        .orderBy({ attachmentTime: 'DESC' });
-      const [transactionsError, transactions] = await exec(query.getMany());
+      const [transactionsError, transactions] = await exec(getTransactionsById(transactionIds));
 
       if (transactionsError) {
         throw transactionsError;
@@ -117,6 +102,12 @@ export class TransactionService {
         .leftJoinAndSelect('transactions.receiverBaseTransactions', 'receiver_base_transactions')
         .leftJoinAndSelect('transactions.fullnodeFeeBaseTransactions', 'fullnode_fee_base_transactions')
         .leftJoinAndSelect('transactions.networkFeeBaseTransactions', 'network_fee_base_transactions')
+        .leftJoinAndSelect('t.tokenMintingFeeBaseTransactions', 'tmbt')
+        .leftJoinAndSelect('t.tokenGenerationFeeBaseTransactions', 'tgbt')
+        .leftJoinAndSelect('tmbt.tokenMintingServiceResponseData', 'tmsd')
+        .leftJoinAndSelect('tgbt.tokenGenerationServiceResponseData', 'tgsd')
+        .leftJoinAndSelect('tgsd.originatorCurrencyResponseData', 'ocd')
+        .leftJoinAndSelect('tgsd.currencyTypeResponseData', 'ctd')
         .where('transactions.hash=:transactionHash', { transactionHash });
       const [transactionError, transaction] = await exec(query.getOneOrFail());
 
@@ -143,6 +134,12 @@ export class TransactionService {
         .leftJoinAndSelect('t.receiverBaseTransactions', 'rbt')
         .leftJoinAndSelect('t.fullnodeFeeBaseTransactions', 'ffbt')
         .leftJoinAndSelect('t.networkFeeBaseTransactions', 'nfbt')
+        .leftJoinAndSelect('t.tokenMintingFeeBaseTransactions', 'tmbt')
+        .leftJoinAndSelect('t.tokenGenerationFeeBaseTransactions', 'tgbt')
+        .leftJoinAndSelect('tmbt.tokenMintingServiceResponseData', 'tmsd')
+        .leftJoinAndSelect('tgbt.tokenGenerationServiceResponseData', 'tgsd')
+        .leftJoinAndSelect('tgsd.originatorCurrencyResponseData', 'ocd')
+        .leftJoinAndSelect('tgsd.currencyTypeResponseData', 'ctd')
         .where('t.nodeHash=:nodeHash', { nodeHash })
         .orderBy({ attachmentTime: 'DESC' })
         .limit(limit)
@@ -189,19 +186,7 @@ export class TransactionService {
       }
 
       const ids = transactionsIds.map(tx => tx.id);
-
-      const query = manager
-        .getRepository<DbAppTransaction>('transactions')
-        .createQueryBuilder('t')
-        .leftJoinAndSelect('t.inputBaseTransactions', 'ibt')
-        .leftJoinAndSelect('t.receiverBaseTransactions', 'rbt')
-        .leftJoinAndSelect('t.fullnodeFeeBaseTransactions', 'ffbt')
-        .leftJoinAndSelect('t.networkFeeBaseTransactions', 'nfbt')
-        .where({ id: In(ids) })
-        .orderBy({ attachmentTime: 'DESC' })
-        .limit(limit)
-        .offset(offset);
-      const [transactionsError, transactions] = await exec(query.getMany());
+      const [transactionsError, transactions] = await exec(getTransactionsById(ids));
 
       if (transactionsError) {
         throw transactionsError;

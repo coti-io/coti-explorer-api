@@ -8,7 +8,10 @@ export class FullnodeFeeBaseTransaction extends BaseTransactionEntity {
   originalAmount: number;
 
   @Column('decimal')
-  fullnodeFeeCreateTime: number;
+  fullnodeFeeCreateTime: string;
+
+  @Column()
+  originalCurrencyHash: string;
 
   @ManyToOne(() => DbAppTransaction, transaction => transaction.fullnodeFeeBaseTransactions)
   @JoinColumn({ name: 'transactionId', referencedColumnName: 'id' })

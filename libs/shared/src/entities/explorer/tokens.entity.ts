@@ -5,8 +5,6 @@ import { ExplorerAppEntitiesNames } from './entities.names';
 @Entity(ExplorerAppEntitiesNames.tokens)
 export class TokenEntity extends BaseEntity {
   @Column()
-  iconUrl: string;
-  @Column()
   currencyHash: string;
   @Column()
   website: string;

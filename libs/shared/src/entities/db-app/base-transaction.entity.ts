@@ -17,5 +17,8 @@ export class BaseTransactionEntity extends BaseEntity {
   addressHash: string;
 
   @Column('decimal')
-  amount: number;
+  amount: string;
+
+  @Column()
+  currencyHash: string;
 }

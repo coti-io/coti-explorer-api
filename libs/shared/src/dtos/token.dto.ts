@@ -1,4 +1,4 @@
-import { IsNotEmpty, IsString } from 'class-validator';
+import { IsNotEmpty, IsOptional, IsString, IsUrl } from 'class-validator';
 import { Currency } from '../entities/db-app';
 import { TokenEntity } from '../entities/explorer';
 
@@ -8,13 +8,48 @@ export class TokenInfoRequestDto {
   currencyHash: string;
 }
 
+export class CreateTokenInfoRequestDto {
+  @IsString()
+  @IsNotEmpty()
+  currencyHash: string;
+  @IsUrl()
+  @IsOptional()
+  website: string;
+  @IsUrl()
+  @IsOptional()
+  discord: string;
+  @IsUrl()
+  @IsOptional()
+  telegram: string;
+  @IsUrl()
+  @IsOptional()
+  twitter: string;
+  @IsUrl()
+  @IsOptional()
+  gitbook: string;
+  @IsUrl()
+  @IsOptional()
+  medium: string;
+}
+
+export class TokenUploadImageUrlRequestDto {
+  @IsString()
+  @IsNotEmpty()
+  uuid: string;
+}
+
+export class TokenUploadImageUrlResponseDto {
+  iconUrl: string;
+}
+
 export class TokenInfoResponseDto {
+  uuid: string;
   name: string;
   symbol: string;
   iconUrl: string;
   description: string;
   originatorHash: string;
-  totalSupply: number;
+  totalSupply: string;
   scale: number;
   currencyHash: string;
   website: string;
@@ -29,7 +64,6 @@ export class TokenInfoResponseDto {
   constructor(currency: Currency, token: TokenEntity, circulatingSupply: number) {
     this.name = currency.originatorCurrencyData.name;
     this.symbol = currency.originatorCurrencyData.symbol;
-    this.iconUrl = token?.iconUrl;
     this.description = currency.originatorCurrencyData.description;
     this.originatorHash = currency.originatorCurrencyData.originatorHash;
     this.totalSupply = currency.originatorCurrencyData.totalSupply;

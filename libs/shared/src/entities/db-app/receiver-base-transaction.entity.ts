@@ -6,13 +6,16 @@ import { DbAppEntitiesNames } from './entities.names';
 @Entity(DbAppEntitiesNames.receiverBaseTransactions)
 export class ReceiverBaseTransaction extends BaseTransactionEntity {
   @Column('decimal')
-  originalAmount: number;
+  originalAmount: string;
 
   @Column()
-  receiverCreateTime: number;
+  receiverCreateTime: string;
 
   @Column({ nullable: true })
   receiverDescription: string;
+
+  @Column()
+  originalCurrencyHash: string;
 
   @ManyToOne(() => DbAppTransaction, transaction => transaction.receiverBaseTransactions)
   @JoinColumn({ name: 'transactionId', referencedColumnName: 'id' })

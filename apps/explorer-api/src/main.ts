@@ -9,7 +9,7 @@ import { RedisIoAdapter } from './redis-io-adapter';
 
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule, appModuleConfig);
-  const config = new DocumentBuilder().setTitle('Explorer API').setDescription('The explorer API description').setVersion('1.0').build();
+  const config = new DocumentBuilder().setTitle('Explorer API').setDescription('The explorer API description').setVersion('1.0').addBearerAuth().build();
   app.enableCors();
   app.use(helmet());
 
@@ -23,7 +23,7 @@ async function bootstrap() {
   app.useWebSocketAdapter(redisIoAdapter);
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('api', app, document);
-  await app.listen(process.env.PORT || 3002);
+  await app.listen(process.env.PORT || 3000);
 }
 
 bootstrap();

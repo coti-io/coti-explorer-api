@@ -47,7 +47,7 @@ export function dbAppInit() {
       connectTimeout: 60 * 60 * 1000,
       timeout: 60 * 60 * 1000,
       supportBigNumbers: true,
-      bigNumberStrings: false,
+      bigNumberStrings: true,
     }),
   });
 }

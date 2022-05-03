@@ -3,6 +3,9 @@ import { SearchRequestDto, SearchResponseDto } from '@app/shared/dtos';
 import { ExplorerExceptionFilter } from '../filters';
 import { ResponseInterceptor } from '../interceptors';
 import { SearchService } from '../services';
+import { ApiTags } from '@nestjs/swagger';
+
+@ApiTags('Search')
 @UseInterceptors(ResponseInterceptor)
 @UseFilters(ExplorerExceptionFilter)
 @Controller('search')

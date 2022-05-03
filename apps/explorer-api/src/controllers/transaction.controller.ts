@@ -10,7 +10,9 @@ import {
   TransactionResponseDto,
   TransactionsResponseDto,
 } from '@app/shared';
+import { ApiTags } from '@nestjs/swagger';
 
+@ApiTags('Transactions')
 @UseInterceptors(ResponseInterceptor)
 @UseFilters(ExplorerExceptionFilter)
 @Controller('transaction')

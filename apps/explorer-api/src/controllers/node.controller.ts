@@ -1,39 +1,40 @@
 import { Body, Controller, HttpCode, Post, Put, UploadedFile, UseFilters, UseGuards, UseInterceptors } from '@nestjs/common';
-import { CreateTokenInfoRequestDto, TokenInfoRequestDto, TokenInfoResponseDto, TokenUploadImageUrlResponseDto } from '@app/shared';
+import { CreateNodeInfoRequestDto, NodeInfoRequestDto, NodeInfoResponseDto, NodeUploadImageUrlResponseDto } from '@app/shared';
 import { ExplorerExceptionFilter } from '../filters';
 import { ExtendedMulterFile, FileExtender, ResponseInterceptor } from '../interceptors';
-import { TokenService } from '../services';
 import { ApiBearerAuth, ApiBody, ApiConsumes, ApiTags } from '@nestjs/swagger';
 import { FileInterceptor } from '@nestjs/platform-express';
+import { NodeService } from '../services';
 import { AdminApiKeyAuthGuard } from '../guards/admin-api-key-auth.guard';
 
-@ApiTags('Token')
+@ApiTags('Node')
 @UseInterceptors(ResponseInterceptor)
 @UseFilters(ExplorerExceptionFilter)
-@Controller('token')
-export class TokenController {
-  constructor(private readonly tokenService: TokenService) {}
+@Controller('node')
+export class NodeController {
+  constructor(private readonly nodeService: NodeService) {}
 
   @Post()
   @HttpCode(200)
-  async getInfo(): Promise<TokenInfoResponseDto[]> {
-    return this.tokenService.getTokensInfo();
+  async getInfo(): Promise<NodeInfoResponseDto[]> {
+    return this.nodeService.getInfos();
   }
 
   @ApiBearerAuth()
   @UseGuards(AdminApiKeyAuthGuard)
   @Put('info')
   @HttpCode(201)
-  async createInfo(@Body() body: CreateTokenInfoRequestDto): Promise<TokenInfoResponseDto> {
-    return this.tokenService.createTokenExtraDetails(body);
+  async createInfo(@Body() body: CreateNodeInfoRequestDto): Promise<NodeInfoResponseDto> {
+    return this.nodeService.updateNodeExtraDetails(body);
   }
 
   @Post('get-info')
   @HttpCode(200)
-  async getTokenInfo(@Body() body: TokenInfoRequestDto): Promise<TokenInfoResponseDto> {
-    return this.tokenService.getTokenInfo(body);
+  async getNodeInfo(@Body() body: NodeInfoRequestDto): Promise<NodeInfoResponseDto> {
+    return this.nodeService.getInfo(body);
   }
 
+  @ApiBearerAuth()
   @UseGuards(AdminApiKeyAuthGuard)
   @ApiConsumes('multipart/form-data')
   @ApiBody({
@@ -50,11 +51,10 @@ export class TokenController {
       },
     },
   })
-  @ApiBearerAuth()
-  @Post('upload-icon')
+  @Put('upload-icon')
   @UseInterceptors(FileExtender)
   @UseInterceptors(FileInterceptor('file'))
-  async upload(@UploadedFile('file') file: ExtendedMulterFile): Promise<TokenUploadImageUrlResponseDto> {
-    return this.tokenService.uploadIcon(file);
+  async upload(@UploadedFile('file') file: ExtendedMulterFile): Promise<NodeUploadImageUrlResponseDto> {
+    return this.nodeService.uploadIcon(file);
   }
 }

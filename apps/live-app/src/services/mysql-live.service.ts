@@ -1,7 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import LiveMysql from 'mysql-live-select';
-import { DbAppTransaction, getConfirmedTransactions, getNewTransactions, getTransactionsCount, TransactionDto } from '@app/shared';
+import { DbAppTransaction, getConfirmedTransactions, getNewTransactions, getTransactionsById, getTransactionsCount, TransactionDto } from '@app/shared';
 import { AppGateway } from '../gateway';
 import { getManager } from 'typeorm';
 import { exec } from '@app/shared';
@@ -139,26 +139,6 @@ export class MysqlLiveService {
     return totalTransactions;
   }
 
-  async getTransactionsById(transactionIds: string[]) {
-    const manager = getManager('db_app');
-    try {
-      const query = manager
-        .getRepository<DbAppTransaction>('transactions')
-        .createQueryBuilder('transactions')
-        .leftJoinAndSelect('transactions.inputBaseTransactions', 'input_base_transactions')
-        .leftJoinAndSelect('transactions.receiverBaseTransactions', 'receiver_base_transactions')
-        .leftJoinAndSelect('transactions.fullnodeFeeBaseTransactions', 'fullnode_fee_base_transactions')
-        .leftJoinAndSelect('transactions.networkFeeBaseTransactions', 'network_fee_base_transactions')
-        .where(`transactions.id IN(${transactionIds.join(',')})`);
-      const [transactionsError, transactions] = await exec(query.getMany());
-      if (transactionsError) {
-        throw transactionsError;
-      }
-      return transactions;
-    } catch (error) {
-      this.logger.error(error);
-    }
-  }
   getTransactionAddressesToNotify(transaction: DbAppTransaction): string[] {
     const addressToNotifyMap = {};
     for (const bt of transaction.inputBaseTransactions) {
@@ -171,6 +151,12 @@ export class MysqlLiveService {
       addressToNotifyMap[bt.addressHash] = 1;
     }
     for (const bt of transaction.networkFeeBaseTransactions) {
+      addressToNotifyMap[bt.addressHash] = 1;
+    }
+    for (const bt of transaction.tokenGenerationFeeBaseTransactions) {
+      addressToNotifyMap[bt.addressHash] = 1;
+    }
+    for (const bt of transaction.tokenMintingFeeBaseTransactions) {
       addressToNotifyMap[bt.addressHash] = 1;
     }
     return Object.keys(addressToNotifyMap);
@@ -190,8 +176,40 @@ export class MysqlLiveService {
       for (const bt of transaction.networkFeeBaseTransactions) {
         addressToNotifyMap[bt.addressHash] = 1;
       }
+      for (const bt of transaction.tokenGenerationFeeBaseTransactions) {
+        addressToNotifyMap[bt.addressHash] = 1;
+      }
+      for (const bt of transaction.tokenMintingFeeBaseTransactions) {
+        addressToNotifyMap[bt.addressHash] = 1;
+      }
     }
     return Object.keys(addressToNotifyMap);
+  }
+
+  getTransactionsCurrencyHash(transactions: DbAppTransaction[]): string[] {
+    const currencyHashMap = {};
+    for (const tx of transactions) {
+      for (const bt of tx.inputBaseTransactions) {
+        if (bt.currencyHash) currencyHashMap[bt.currencyHash] = 1;
+      }
+      for (const bt of tx.receiverBaseTransactions) {
+        if (bt.currencyHash) currencyHashMap[bt.currencyHash] = 1;
+      }
+      for (const bt of tx.fullnodeFeeBaseTransactions) {
+        if (bt.currencyHash) currencyHashMap[bt.currencyHash] = 1;
+      }
+      for (const bt of tx.networkFeeBaseTransactions) {
+        if (bt.currencyHash) currencyHashMap[bt.currencyHash] = 1;
+      }
+      for (const bt of tx.tokenGenerationFeeBaseTransactions) {
+        if (bt.currencyHash) currencyHashMap[bt.currencyHash] = 1;
+      }
+      for (const bt of tx.tokenMintingFeeBaseTransactions) {
+        if (bt.currencyHash) currencyHashMap[bt.currencyHash] = 1;
+      }
+    }
+
+    return Object.keys(currencyHashMap);
   }
   async eventHandler(event: SocketEvents, transactionEvents: any[]) {
     const msgPromises = [];
@@ -199,7 +217,7 @@ export class MysqlLiveService {
 
     try {
       const transactionIds = transactionEvents.map(x => x.id);
-      const transactionEntities = await this.getTransactionsById(transactionIds);
+      const transactionEntities = await getTransactionsById(transactionIds);
       const allAddressesToNotify = this.getTransactionsAddressesToNotify(transactionEntities);
       const addressTotalTransactionCountMap = await this.getTotalTransactionCountMap(allAddressesToNotify);
       for (const transaction of transactionEntities) {

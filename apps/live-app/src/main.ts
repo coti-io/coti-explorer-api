@@ -6,6 +6,7 @@ import helmet from 'helmet';
 import { LiveAppModule } from './live-app.module';
 import { appModuleConfig } from './configurations';
 import { RedisIoAdapter } from './redis-io-adapter';
+import { ConfigService } from '@nestjs/config';
 
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(LiveAppModule, appModuleConfig);
@@ -19,11 +20,13 @@ async function bootstrap() {
     }),
   );
   const redisIoAdapter = new RedisIoAdapter(app);
-  await redisIoAdapter.connectToRedis(process.env.REDIS_IP, process.env.REDIS_PORT);
+  const configService = app.get<ConfigService>(ConfigService);
+  await redisIoAdapter.connectToRedis(configService.get<string>('REDIS_IP'), configService.get<string>('REDIS_PORT'));
   app.useWebSocketAdapter(redisIoAdapter);
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('api', app, document);
-  await app.listen(process.env.PORT || 3001);
+  const port = configService.get<number>('PORT') || 3000;
+  await app.listen(port);
 }
 
 bootstrap();

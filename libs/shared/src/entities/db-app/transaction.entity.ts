@@ -1,10 +1,12 @@
 import { BaseTransactionEvent, BaseTransactionName, TransactionType } from '../../dtos';
 import { exec } from '../../utils';
-import { Column, Entity, getManager, OneToMany } from 'typeorm';
+import { Column, Entity, EntityManager, getManager, In, OneToMany } from 'typeorm';
 import { FullnodeFeeBaseTransaction, NetworkFeeBaseTransaction, ReceiverBaseTransaction } from '.';
 import { BaseEntity } from '../base.entity';
 import { DbAppEntitiesNames } from './entities.names';
 import { InputBaseTransaction } from './input-base-transaction.entity';
+import { TokenMintingFeeBaseTransaction } from '@app/shared/entities/db-app/token-minting-fee-base-transaction.entity';
+import { TokenGenerationFeeBaseTransaction } from '@app/shared/entities/db-app/token-generation-fee-base-transaction.entity';
 
 @Entity(DbAppEntitiesNames.transactions)
 export class DbAppTransaction extends BaseEntity {
@@ -15,16 +17,16 @@ export class DbAppTransaction extends BaseEntity {
   index: number;
 
   @Column()
-  amount: number;
+  amount: string;
 
   @Column()
-  attachmentTime: number;
+  attachmentTime: string;
 
   @Column()
   isValid: string;
 
   @Column()
-  transactionCreateTime: number;
+  transactionCreateTime: string;
 
   @Column()
   leftParentHash: string;
@@ -42,7 +44,7 @@ export class DbAppTransaction extends BaseEntity {
   trustChainTrustScore: number;
 
   @Column()
-  transactionConsensusUpdateTime: number;
+  transactionConsensusUpdateTime: string;
 
   @Column()
   transactionDescription: string;
@@ -53,7 +55,7 @@ export class DbAppTransaction extends BaseEntity {
   @Column()
   type: TransactionType;
 
-  @OneToMany(() => ReceiverBaseTransaction, receiversbaseTransactions => receiversbaseTransactions.baseTransaction)
+  @OneToMany(() => ReceiverBaseTransaction, receiverBaseTransactions => receiverBaseTransactions.baseTransaction)
   receiverBaseTransactions: ReceiverBaseTransaction[];
 
   @OneToMany(() => InputBaseTransaction, inputBaseTransactions => inputBaseTransactions.baseTransaction)
@@ -64,6 +66,12 @@ export class DbAppTransaction extends BaseEntity {
 
   @OneToMany(() => NetworkFeeBaseTransaction, networkFeeBaseTransactions => networkFeeBaseTransactions.baseTransaction)
   networkFeeBaseTransactions: NetworkFeeBaseTransaction[];
+
+  @OneToMany(() => TokenMintingFeeBaseTransaction, tokenMintingFeeBaseTransactions => tokenMintingFeeBaseTransactions.baseTransaction)
+  tokenMintingFeeBaseTransactions: TokenMintingFeeBaseTransaction[];
+
+  @OneToMany(() => TokenGenerationFeeBaseTransaction, tokenGenerationFeeBaseTransactions => tokenGenerationFeeBaseTransactions.baseTransaction)
+  tokenGenerationFeeBaseTransactions: TokenGenerationFeeBaseTransaction[];
 
   baseTransactions: (InputBaseTransaction | ReceiverBaseTransaction | FullnodeFeeBaseTransaction | NetworkFeeBaseTransaction)[];
 }
@@ -100,4 +108,27 @@ export async function getRelatedInputs(transactionId: number): Promise<BaseTrans
   return ibts.map(ibt => {
     return { name: BaseTransactionName.INPUT, addressHash: ibt.addressHash };
   });
+}
+
+export async function getTransactionsById(transactionIds: number[]): Promise<DbAppTransaction[]> {
+  const query = getManager('db_app')
+    .getRepository<DbAppTransaction>('transactions')
+    .createQueryBuilder('t')
+    .leftJoinAndSelect('t.inputBaseTransactions', 'ibt')
+    .leftJoinAndSelect('t.receiverBaseTransactions', 'rbt')
+    .leftJoinAndSelect('t.fullnodeFeeBaseTransactions', 'ffbt')
+    .leftJoinAndSelect('t.networkFeeBaseTransactions', 'nfbt')
+    .leftJoinAndSelect('t.tokenMintingFeeBaseTransactions', 'tmbt')
+    .leftJoinAndSelect('t.tokenGenerationFeeBaseTransactions', 'tgbt')
+    .leftJoinAndSelect('tmbt.tokenMintingServiceResponseData', 'tmsd')
+    .leftJoinAndSelect('tgbt.tokenGenerationServiceResponseData', 'tgsd')
+    .leftJoinAndSelect('tgsd.originatorCurrencyResponseData', 'ocd')
+    .leftJoinAndSelect('tgsd.currencyTypeResponseData', 'ctd')
+    .where({ id: In(transactionIds) })
+    .orderBy({ attachmentTime: 'DESC' });
+  const [transactionsError, transactions] = await exec(query.getMany());
+  if (transactionsError) {
+    throw transactionsError;
+  }
+  return transactions;
 }

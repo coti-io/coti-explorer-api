@@ -11,5 +11,5 @@ export class TransactionAddress extends BaseEntity {
   addressId: number;
 
   @Column()
-  attachmentTime: number;
+  attachmentTime: string;
 }

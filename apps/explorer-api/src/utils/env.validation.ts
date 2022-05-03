@@ -22,6 +22,14 @@ export function validate() {
 
       REDIS_IP: Joi.string().exist(),
       REDIS_PORT: Joi.number().exist(),
+
+      AWS_ACCESS_KEY_ID: Joi.string().exist(),
+      AWS_SECRET_ACCESS_KEY: Joi.string().exist(),
+
+      MAX_FILE_SIZE_IN_KB: Joi.number().exist(),
+      ALOUD_FILE_FORMATS: Joi.string().exist(),
+
+      NETWORK: Joi.string().exist(),
     }),
     validationOptions: {
       allowUnknown: true,

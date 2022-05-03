@@ -1,0 +1,25 @@
+import { Column, Entity, JoinColumn, ManyToOne, OneToOne } from 'typeorm';
+import { DbAppTransaction } from '.';
+import { BaseTransactionEntity } from './base-transaction.entity';
+import { DbAppEntitiesNames } from './entities.names';
+import { TokenGenerationServiceData } from './token-generation-service-data.entity';
+
+@Entity(DbAppEntitiesNames.tokenGenerationFeeBaseTransactions)
+export class TokenGenerationFeeBaseTransaction extends BaseTransactionEntity {
+  @Column('decimal')
+  originalAmount: string;
+
+  @Column()
+  originalCurrencyHash: string;
+
+  @Column()
+  fullnodeFeeCreateTime: string;
+
+  @OneToOne(() => TokenGenerationServiceData, tokenGenerationServiceData => tokenGenerationServiceData.tokenGenerationBaseTransaction)
+  @JoinColumn({ name: 'id', referencedColumnName: 'baseTransactionId' })
+  tokenGenerationServiceResponseData: TokenGenerationServiceData;
+
+  @ManyToOne(() => DbAppTransaction, transaction => transaction.tokenMintingFeeBaseTransactions)
+  @JoinColumn({ name: 'transactionId', referencedColumnName: 'id' })
+  baseTransaction: DbAppTransaction;
+}
