@@ -25,6 +25,6 @@ export class CurrencyTypeData extends BaseEntity {
   @Column('decimal')
   currencyTypeDataCreateTime: string;
 
-  @OneToOne(() => TokenGenerationServiceData, tokenGenerationServiceData => tokenGenerationServiceData.currencyTypeResponseData)
+  @OneToOne(() => TokenGenerationServiceData, tokenGenerationServiceData => tokenGenerationServiceData.currencyTypeData)
   tokenGenerationServiceData: TokenGenerationServiceData;
 }

@@ -1,7 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 
 import { ExplorerBadRequestError, ExplorerError } from '../errors/explorer-error';
-import { getManager, In } from 'typeorm';
+import { getManager } from 'typeorm';
 import {
   TransactionDto,
   TransactionResponseDto,
@@ -13,6 +13,8 @@ import {
   TransactionAddress,
   exec,
   getTransactionsById,
+  getTokensSymbols,
+  DbAppEntitiesNames,
 } from '@app/shared';
 import { ConfigService } from '@nestjs/config';
 
@@ -25,8 +27,8 @@ export class TransactionService {
     const manager = getManager('db_app');
     try {
       const idsQuery = manager
-        .getRepository<DbAppTransaction>('transactions')
-        .createQueryBuilder('transactions')
+        .getRepository<DbAppTransaction>(DbAppEntitiesNames.transactions)
+        .createQueryBuilder('t')
         .select('id')
         .orderBy({ attachmentTime: 'DESC' })
         .limit(limit)
@@ -43,7 +45,8 @@ export class TransactionService {
       if (transactionsError) {
         throw transactionsError;
       }
-      return new TransactionsResponseDto(transactions.length, transactions);
+      const currencySymbolMap = await getTokensSymbols(transactions);
+      return new TransactionsResponseDto(transactions.length, transactions, currencySymbolMap);
     } catch (error) {
       this.logger.error(error);
       throw new ExplorerError(error);
@@ -84,8 +87,9 @@ export class TransactionService {
       if (totalTransactionsError) {
         throw totalTransactionsError;
       }
+      const currencySymbolMap = await getTokensSymbols(transactions);
 
-      return new TransactionsResponseDto(totalTransactions, transactions);
+      return new TransactionsResponseDto(totalTransactions, transactions, currencySymbolMap);
     } catch (error) {
       this.logger.error(error);
       throw new ExplorerError(error);
@@ -104,10 +108,10 @@ export class TransactionService {
         .leftJoinAndSelect('transactions.networkFeeBaseTransactions', 'network_fee_base_transactions')
         .leftJoinAndSelect('t.tokenMintingFeeBaseTransactions', 'tmbt')
         .leftJoinAndSelect('t.tokenGenerationFeeBaseTransactions', 'tgbt')
-        .leftJoinAndSelect('tmbt.tokenMintingServiceResponseData', 'tmsd')
-        .leftJoinAndSelect('tgbt.tokenGenerationServiceResponseData', 'tgsd')
-        .leftJoinAndSelect('tgsd.originatorCurrencyResponseData', 'ocd')
-        .leftJoinAndSelect('tgsd.currencyTypeResponseData', 'ctd')
+        .leftJoinAndSelect('tmbt.tokenMintingServiceData', 'tmsd')
+        .leftJoinAndSelect('tgbt.tokenGenerationServiceData', 'tgsd')
+        .leftJoinAndSelect('tgsd.originatorCurrencyData', 'ocd')
+        .leftJoinAndSelect('tgsd.currencyTypeData', 'ctd')
         .where('transactions.hash=:transactionHash', { transactionHash });
       const [transactionError, transaction] = await exec(query.getOneOrFail());
 
@@ -115,8 +119,10 @@ export class TransactionService {
         throw transactionError;
       }
 
+      const currencySymbolMap = await getTokensSymbols([transaction]);
+
       return {
-        transactionData: new TransactionDto(transaction),
+        transactionData: new TransactionDto(transaction, currencySymbolMap),
       };
     } catch (error) {
       this.logger.error(error);
@@ -136,10 +142,10 @@ export class TransactionService {
         .leftJoinAndSelect('t.networkFeeBaseTransactions', 'nfbt')
         .leftJoinAndSelect('t.tokenMintingFeeBaseTransactions', 'tmbt')
         .leftJoinAndSelect('t.tokenGenerationFeeBaseTransactions', 'tgbt')
-        .leftJoinAndSelect('tmbt.tokenMintingServiceResponseData', 'tmsd')
-        .leftJoinAndSelect('tgbt.tokenGenerationServiceResponseData', 'tgsd')
-        .leftJoinAndSelect('tgsd.originatorCurrencyResponseData', 'ocd')
-        .leftJoinAndSelect('tgsd.currencyTypeResponseData', 'ctd')
+        .leftJoinAndSelect('tmbt.tokenMintingServiceData', 'tmsd')
+        .leftJoinAndSelect('tgbt.tokenGenerationServiceData', 'tgsd')
+        .leftJoinAndSelect('tgsd.originatorCurrencyData', 'ocd')
+        .leftJoinAndSelect('tgsd.currencyTypeData', 'ctd')
         .where('t.nodeHash=:nodeHash', { nodeHash })
         .orderBy({ attachmentTime: 'DESC' })
         .limit(limit)
@@ -157,8 +163,8 @@ export class TransactionService {
       if (countError) {
         throw countError;
       }
-
-      return new TransactionsResponseDto(countResponse.count, transactions);
+      const currencySymbolMap = await getTokensSymbols(transactions);
+      return new TransactionsResponseDto(countResponse.count, transactions, currencySymbolMap);
     } catch (error) {
       this.logger.error(error);
       throw new ExplorerError(error);
@@ -203,8 +209,8 @@ export class TransactionService {
       if (countError) {
         throw countError;
       }
-
-      return new TransactionsResponseDto(countResponse.count, transactions);
+      const currencySymbolMap = await getTokensSymbols(transactions);
+      return new TransactionsResponseDto(countResponse.count, transactions, currencySymbolMap);
     } catch (error) {
       this.logger.error(error);
       throw new ExplorerError(error);

@@ -1,6 +1,6 @@
-import { BaseTransactionEvent, BaseTransactionName, TransactionType } from '../../dtos';
+import { TransactionType } from '../../dtos';
 import { exec } from '../../utils';
-import { Column, Entity, EntityManager, getManager, In, OneToMany } from 'typeorm';
+import { Column, Entity, getManager, In, OneToMany } from 'typeorm';
 import { FullnodeFeeBaseTransaction, NetworkFeeBaseTransaction, ReceiverBaseTransaction } from '.';
 import { BaseEntity } from '../base.entity';
 import { DbAppEntitiesNames } from './entities.names';
@@ -76,7 +76,7 @@ export class DbAppTransaction extends BaseEntity {
   baseTransactions: (InputBaseTransaction | ReceiverBaseTransaction | FullnodeFeeBaseTransaction | NetworkFeeBaseTransaction)[];
 }
 
-export const getNewTransactions = () => {
+export const getNewTransactionsQuery = (): string => {
   return `
     SELECT 
     transactions.id
@@ -88,7 +88,7 @@ export const getNewTransactions = () => {
     ORDER BY transactions.attachmentTime DESC
   `;
 };
-export const getConfirmedTransactions = () => {
+export const getConfirmedTransactionsQuery = (): string => {
   return `
     SELECT 
     transactions.id
@@ -101,15 +101,6 @@ export const getConfirmedTransactions = () => {
   `;
 };
 
-export async function getRelatedInputs(transactionId: number): Promise<BaseTransactionEvent[]> {
-  const [ibtsError, ibts] = await exec(getManager('db_app').getRepository<InputBaseTransaction>('input_base_transactions').find({ transactionId }));
-  if (ibtsError) throw ibtsError;
-
-  return ibts.map(ibt => {
-    return { name: BaseTransactionName.INPUT, addressHash: ibt.addressHash };
-  });
-}
-
 export async function getTransactionsById(transactionIds: number[]): Promise<DbAppTransaction[]> {
   const query = getManager('db_app')
     .getRepository<DbAppTransaction>('transactions')
@@ -120,10 +111,10 @@ export async function getTransactionsById(transactionIds: number[]): Promise<DbA
     .leftJoinAndSelect('t.networkFeeBaseTransactions', 'nfbt')
     .leftJoinAndSelect('t.tokenMintingFeeBaseTransactions', 'tmbt')
     .leftJoinAndSelect('t.tokenGenerationFeeBaseTransactions', 'tgbt')
-    .leftJoinAndSelect('tmbt.tokenMintingServiceResponseData', 'tmsd')
-    .leftJoinAndSelect('tgbt.tokenGenerationServiceResponseData', 'tgsd')
-    .leftJoinAndSelect('tgsd.originatorCurrencyResponseData', 'ocd')
-    .leftJoinAndSelect('tgsd.currencyTypeResponseData', 'ctd')
+    .leftJoinAndSelect('tmbt.tokenMintingServiceData', 'tmsd')
+    .leftJoinAndSelect('tgbt.tokenGenerationServiceData', 'tgsd')
+    .leftJoinAndSelect('tgsd.originatorCurrencyData', 'ocd')
+    .leftJoinAndSelect('tgsd.currencyTypeData', 'ctd')
     .where({ id: In(transactionIds) })
     .orderBy({ attachmentTime: 'DESC' });
   const [transactionsError, transactions] = await exec(query.getMany());

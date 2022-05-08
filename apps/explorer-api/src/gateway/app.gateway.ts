@@ -31,10 +31,10 @@ export class AppGateway implements OnGatewayInit, OnGatewayConnection, OnGateway
   }
 
   @SubscribeMessage('subscribe')
-  subscribe(client: Socket, payload: { address?: string; hash?: string }) {
+  subscribe(client: Socket, payload: { address?: string; hash?: string; nodeHash?: string; tokenHash?: string }) {
     try {
       if (!payload) return;
-      const { address, hash } = payload;
+      const { address, hash, nodeHash, tokenHash } = payload;
       let addressLog = '';
       let hashLog = '';
       if (address) {
@@ -45,6 +45,14 @@ export class AppGateway implements OnGatewayInit, OnGatewayConnection, OnGateway
         client.join(hash);
         hashLog = `[hash ${hash}]`;
       }
+      if (nodeHash) {
+        client.join(nodeHash);
+        hashLog = `[hash ${nodeHash}]`;
+      }
+      if (tokenHash) {
+        client.join(tokenHash);
+        hashLog = `[hash ${tokenHash}]`;
+      }
       this.logger.log(`[subscribe][socketId: ${client.id}]${addressLog}${hashLog}`);
     } catch (error) {
       this.logger.warn('socket subscribe failed');
@@ -52,9 +60,9 @@ export class AppGateway implements OnGatewayInit, OnGatewayConnection, OnGateway
   }
 
   @SubscribeMessage('unsubscribe')
-  unsubscribe(client: Socket, payload: { address?: string; hash?: string }) {
+  unsubscribe(client: Socket, payload: { address?: string; hash?: string; nodeHash?: string; tokenHash?: string }) {
     try {
-      const { address, hash } = payload;
+      const { address, hash, nodeHash, tokenHash } = payload;
       let addressLog = '';
       let hashLog = '';
       if (address) {
@@ -65,17 +73,17 @@ export class AppGateway implements OnGatewayInit, OnGatewayConnection, OnGateway
         client.leave(hash);
         hashLog = `[hash ${hash}]`;
       }
+      if (nodeHash) {
+        client.leave(nodeHash);
+        hashLog = `[hash ${nodeHash}]`;
+      }
+      if (tokenHash) {
+        client.leave(tokenHash);
+        hashLog = `[hash ${tokenHash}]`;
+      }
       this.logger.log(`[unsubscribe][socketId: ${client.id}]${addressLog}${hashLog}`);
     } catch (error) {
       this.logger.warn('socket unsubscribe failed');
     }
-  }
-
-  async sendMessageToRoom(room: string, event: string, data: any) {
-    this.wss.to(room).emit(event, data);
-  }
-
-  async sendBroadcast(event: string, data: any) {
-    this.wss.sockets.emit(event, data);
   }
 }

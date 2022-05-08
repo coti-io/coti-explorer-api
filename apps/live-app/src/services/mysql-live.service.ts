@@ -1,9 +1,8 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import LiveMysql from 'mysql-live-select';
-import { DbAppTransaction, getConfirmedTransactions, getNewTransactions, getTransactionsById, getTransactionsCount, TransactionDto } from '@app/shared';
+import { DbAppTransaction, getConfirmedTransactionsQuery, getNewTransactionsQuery, getTokensSymbols, getTransactionsById, getTransactionsCount, TransactionDto } from '@app/shared';
 import { AppGateway } from '../gateway';
-import { getManager } from 'typeorm';
 import { exec } from '@app/shared';
 
 const firstRunMap = {};
@@ -84,7 +83,7 @@ export class MysqlLiveService {
     }
 
     this.liveConnection
-      .select(getNewTransactions(), [
+      .select(getNewTransactionsQuery(), [
         {
           table: `transactions`,
         },
@@ -101,7 +100,7 @@ export class MysqlLiveService {
       });
 
     this.liveConnection
-      .select(getConfirmedTransactions(), [
+      .select(getConfirmedTransactionsQuery(), [
         {
           table: `transactions`,
         },
@@ -186,31 +185,6 @@ export class MysqlLiveService {
     return Object.keys(addressToNotifyMap);
   }
 
-  getTransactionsCurrencyHash(transactions: DbAppTransaction[]): string[] {
-    const currencyHashMap = {};
-    for (const tx of transactions) {
-      for (const bt of tx.inputBaseTransactions) {
-        if (bt.currencyHash) currencyHashMap[bt.currencyHash] = 1;
-      }
-      for (const bt of tx.receiverBaseTransactions) {
-        if (bt.currencyHash) currencyHashMap[bt.currencyHash] = 1;
-      }
-      for (const bt of tx.fullnodeFeeBaseTransactions) {
-        if (bt.currencyHash) currencyHashMap[bt.currencyHash] = 1;
-      }
-      for (const bt of tx.networkFeeBaseTransactions) {
-        if (bt.currencyHash) currencyHashMap[bt.currencyHash] = 1;
-      }
-      for (const bt of tx.tokenGenerationFeeBaseTransactions) {
-        if (bt.currencyHash) currencyHashMap[bt.currencyHash] = 1;
-      }
-      for (const bt of tx.tokenMintingFeeBaseTransactions) {
-        if (bt.currencyHash) currencyHashMap[bt.currencyHash] = 1;
-      }
-    }
-
-    return Object.keys(currencyHashMap);
-  }
   async eventHandler(event: SocketEvents, transactionEvents: any[]) {
     const msgPromises = [];
     if (!transactionEvents?.length) return;
@@ -218,12 +192,13 @@ export class MysqlLiveService {
     try {
       const transactionIds = transactionEvents.map(x => x.id);
       const transactionEntities = await getTransactionsById(transactionIds);
+      const currencySymbolMap = await getTokensSymbols(transactionEntities);
       const allAddressesToNotify = this.getTransactionsAddressesToNotify(transactionEntities);
       const addressTotalTransactionCountMap = await this.getTotalTransactionCountMap(allAddressesToNotify);
       for (const transaction of transactionEntities) {
         const addressesToNotify = this.getTransactionAddressesToNotify(transaction);
 
-        const eventMessage = new TransactionDto(transaction);
+        const eventMessage = new TransactionDto(transaction, currencySymbolMap);
         this.logger.debug(`about to send event:${event} message: ${JSON.stringify(eventMessage)}`);
         for (const addressToNotify of addressesToNotify) {
           msgPromises.push(this.gateway.sendMessageToRoom(addressToNotify, `${SocketEvents.AddressTransactionsNotification}/${addressToNotify}`, eventMessage));

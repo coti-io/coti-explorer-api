@@ -17,7 +17,7 @@ export class TokenMintingFeeBaseTransaction extends BaseTransactionEntity {
 
   @OneToOne(() => TokenMintingServiceData, tokenMintingServiceData => tokenMintingServiceData.tokenMintBaseTransaction)
   @JoinColumn({ name: 'id', referencedColumnName: 'baseTransactionId' })
-  tokenMintingServiceResponseData: TokenMintingServiceData;
+  tokenMintingServiceData: TokenMintingServiceData;
 
   @ManyToOne(() => DbAppTransaction, transaction => transaction.tokenMintingFeeBaseTransactions)
   @JoinColumn({ name: 'transactionId', referencedColumnName: 'id' })

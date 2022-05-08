@@ -14,13 +14,13 @@ export class TokenGenerationServiceData extends BaseEntity {
 
   @OneToOne(() => CurrencyTypeData, currencyTypeData => currencyTypeData.tokenGenerationServiceData)
   @JoinColumn({ name: 'id', referencedColumnName: 'serviceDataId' })
-  currencyTypeResponseData: CurrencyTypeData;
+  currencyTypeData: CurrencyTypeData;
 
   @OneToOne(() => OriginatorCurrencyData, originatorCurrencyData => originatorCurrencyData.tokenGenerationServiceData)
   @JoinColumn({ name: 'id', referencedColumnName: 'serviceDataId' })
-  originatorCurrencyResponseData: OriginatorCurrencyData;
+  originatorCurrencyData: OriginatorCurrencyData;
 
-  @OneToOne(() => TokenGenerationFeeBaseTransaction, tokenGenerationBaseTransaction => tokenGenerationBaseTransaction.tokenGenerationServiceResponseData)
+  @OneToOne(() => TokenGenerationFeeBaseTransaction, tokenGenerationBaseTransaction => tokenGenerationBaseTransaction.tokenGenerationServiceData)
   @JoinColumn({ name: 'baseTransactionId', referencedColumnName: 'id' })
   tokenGenerationBaseTransaction: TokenGenerationFeeBaseTransaction;
 }

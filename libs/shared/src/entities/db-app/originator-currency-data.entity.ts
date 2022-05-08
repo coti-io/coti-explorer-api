@@ -27,7 +27,7 @@ export class OriginatorCurrencyData extends BaseEntity {
   @Column()
   scale: number;
 
-  @OneToOne(() => TokenGenerationServiceData, tokenGenerationServiceData => tokenGenerationServiceData.originatorCurrencyResponseData)
+  @OneToOne(() => TokenGenerationServiceData, tokenGenerationServiceData => tokenGenerationServiceData.originatorCurrencyData)
   tokenGenerationServiceData: TokenGenerationServiceData;
 
   @OneToOne(() => Currency, currency => currency.originatorCurrencyData)

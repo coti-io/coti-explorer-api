@@ -17,7 +17,7 @@ export class TokenGenerationFeeBaseTransaction extends BaseTransactionEntity {
 
   @OneToOne(() => TokenGenerationServiceData, tokenGenerationServiceData => tokenGenerationServiceData.tokenGenerationBaseTransaction)
   @JoinColumn({ name: 'id', referencedColumnName: 'baseTransactionId' })
-  tokenGenerationServiceResponseData: TokenGenerationServiceData;
+  tokenGenerationServiceData: TokenGenerationServiceData;
 
   @ManyToOne(() => DbAppTransaction, transaction => transaction.tokenMintingFeeBaseTransactions)
   @JoinColumn({ name: 'transactionId', referencedColumnName: 'id' })

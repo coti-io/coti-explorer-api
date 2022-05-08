@@ -20,6 +20,6 @@ export class TokenMintingServiceData extends BaseEntity {
   @Column()
   signerHash: string;
 
-  @OneToOne(() => TokenMintingFeeBaseTransaction, tokenMintingFeeBaseTransaction => tokenMintingFeeBaseTransaction.tokenMintingServiceResponseData)
+  @OneToOne(() => TokenMintingFeeBaseTransaction, tokenMintingFeeBaseTransaction => tokenMintingFeeBaseTransaction.tokenMintingServiceData)
   tokenMintBaseTransaction: TokenMintingFeeBaseTransaction;
 }
