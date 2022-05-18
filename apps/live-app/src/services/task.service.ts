@@ -1,25 +1,29 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { getManager } from 'typeorm';
 import { exec } from '@app/shared';
 import * as moment from 'moment';
+import { NodeService } from './node.service';
 
 const iterationCounter = new Map();
 @Injectable()
-export class MysqlLiveService {
+export class TaskService implements OnModuleInit {
   private readonly logger = new Logger('TaskService');
-  constructor(private readonly configService: ConfigService) {
+  constructor(private readonly configService: ConfigService, private readonly nodeService: NodeService) {}
+
+  onModuleInit(): void {
     this.init();
   }
 
-  async init(): Promise<void> {}
+  async init(): Promise<void> {
+    this.runEveryXSeconds('updateNodeData', this.nodeService.updateNodesData.bind(this.nodeService), 60);
+  }
 
-  async runEveryXSeconds(name: string, functionToRun: () => Promise<any>, minIntervalInSeconds: number) {
-    // TODO Conevert to moment
+  async runEveryXSeconds<T>(name: string, functionToRun: () => Promise<T>, minIntervalInSeconds: number): Promise<void> {
     try {
       let lastActivationTime = moment.now();
       iterationCounter.set(name, 1);
       this.logger.log(`[Task ${name}] [started]`);
+      // noinspection InfiniteLoopJS
       while (true) {
         lastActivationTime = moment.now();
         const [error] = await exec(functionToRun());

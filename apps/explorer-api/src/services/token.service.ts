@@ -1,5 +1,4 @@
 import { BadRequestException, Injectable, Logger } from '@nestjs/common';
-import { uuid } from 'uuidv4';
 import {
   TokenInfoRequestDto,
   TokenInfoResponseDto,
@@ -120,23 +119,28 @@ export class TokenService {
     const explorerManager = getManager();
     try {
       const tokensRepository = explorerManager.getRepository<TokenEntity>(ExplorerAppEntitiesNames.tokens);
-      const [tokenInfoError, tokenInfoFound] = await exec(tokensRepository.findOne({ currencyHash: params.currencyHash }));
+      const { currencyHash } = params;
+      const [tokenInfoError, tokenInfoFound] = await exec(tokensRepository.findOne({ currencyHash }));
       if (tokenInfoError) {
         throw new ExplorerInternalServerError(tokenInfoError.message);
       }
       if (tokenInfoFound) {
-        throw new BadRequestException(`A DB entity for currency hash: ${params.currencyHash} already exists`);
-      }
-      const tokenInfo = tokensRepository.create({
-        ...params,
-      });
+        const [updatedTokenError] = await exec(tokensRepository.update({ currencyHash }, params));
+        if (updatedTokenError) {
+          throw new ExplorerInternalServerError(updatedTokenError.message);
+        }
+      } else {
+        const tokenInfo = tokensRepository.create({
+          ...params,
+        });
 
-      const [tokensError, token] = await exec(tokensRepository.save(tokenInfo));
-      if (tokensError) {
-        throw new ExplorerInternalServerError(tokensError.message);
+        const [tokensError] = await exec(tokensRepository.save(tokenInfo));
+        if (tokensError) {
+          throw new ExplorerInternalServerError(tokensError.message);
+        }
       }
 
-      return this.getTokenInfo({ currencyHash: token.currencyHash });
+      return this.getTokenInfo({ currencyHash });
     } catch (error) {
       this.logger.error(error);
       throw new ExplorerError(error);

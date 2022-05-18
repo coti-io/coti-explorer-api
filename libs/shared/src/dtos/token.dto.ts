@@ -32,12 +32,6 @@ export class CreateTokenInfoRequestDto {
   medium: string;
 }
 
-export class TokenUploadImageUrlRequestDto {
-  @IsString()
-  @IsNotEmpty()
-  uuid: string;
-}
-
 export class TokenUploadImageUrlResponseDto {
   iconUrl: string;
 }

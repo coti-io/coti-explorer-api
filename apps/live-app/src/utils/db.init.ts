@@ -6,9 +6,7 @@ export function explorerDbInit() {
   return TypeOrmModule.forRootAsync({
     imports: [ConfigModule],
     inject: [ConfigService],
-    name: 'default',
     useFactory: (configService: ConfigService) => ({
-      name: 'default',
       type: 'mysql',
       host: configService.get<string>('DB_HOST'),
       port: configService.get<number>('DB_PORT'),

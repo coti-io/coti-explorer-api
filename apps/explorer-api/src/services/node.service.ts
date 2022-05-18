@@ -12,7 +12,7 @@ import {
 } from '@app/shared';
 
 import { ExplorerBadRequestError, ExplorerError, ExplorerInternalServerError } from '../errors';
-import { getManager } from 'typeorm';
+import { EntityManager, getManager } from 'typeorm';
 import { ConfigService } from '@nestjs/config';
 import { FileUploadService } from './file-upload.service';
 import { ExtendedMulterFile } from '../interceptors';
@@ -65,58 +65,65 @@ export class NodeService {
   // end point for admin
   async updateNodeExtraDetails(params: CreateNodeInfoRequestDto): Promise<NodeInfoResponseDto> {
     const explorerManager = getManager();
+    const { nodeHash, name, isActive } = params;
+    const [updateNodeResponseError] = await exec(
+      explorerManager.transaction(async (manager: EntityManager) => {
+        const nodeHashesRepository = explorerManager.getRepository<NodeHashEntity>(ExplorerAppEntitiesNames.nodeHashes);
+        const nodesRepository = explorerManager.getRepository<NodeEntity>(ExplorerAppEntitiesNames.nodes);
+        const [nodeHashFoundError, nodeHashFound] = await exec(nodeHashesRepository.findOne({ hash: nodeHash }));
+        if (nodeHashFoundError) {
+          throw new ExplorerInternalServerError(nodeHashFoundError.message);
+        }
+
+        const [nodeFoundError, nodeFound] = await exec(nodesRepository.findOne({ name }));
+        if (nodeFoundError) {
+          throw new ExplorerInternalServerError(nodeFoundError.message);
+        }
+        let node = nodeFound;
+        // if we didn't have node data with this name create it
+        if (!nodeFound) {
+          const nodeInfo = nodesRepository.create({
+            name,
+          });
+          const [nodeError, nodeCreated] = await exec(nodesRepository.save(nodeInfo));
+          if (nodeError) {
+            throw new ExplorerInternalServerError(nodeError.message);
+          }
+          node = nodeCreated;
+        }
+
+        if (isActive && nodeFound) {
+          const [updateError] = await exec(nodeHashesRepository.update({ nodeId: node.id }, { isActive: false }));
+          if (updateError) {
+            throw new ExplorerInternalServerError(updateError.message);
+          }
+        }
+
+        if (!nodeHashFound) {
+          const newNodeHash = nodeHashesRepository.create({
+            hash: nodeHash,
+            nodeId: node.id,
+            isActive,
+          });
+
+          const [nodeHashEntityError] = await exec(nodeHashesRepository.save(newNodeHash));
+          if (nodeHashEntityError) {
+            throw new ExplorerInternalServerError(nodeHashEntityError.message);
+          }
+        } else {
+          nodeHashFound.nodeId = nodeFound.id;
+          const [nodeHashEntityError] = await exec(nodeHashesRepository.save(nodeHashFound));
+          if (nodeHashEntityError) {
+            throw new ExplorerInternalServerError(nodeHashEntityError.message);
+          }
+        }
+        return nodeHash;
+      }),
+    );
+    if (updateNodeResponseError) {
+      throw new ExplorerError(updateNodeResponseError);
+    }
     try {
-      const { nodeHash, name, isActive } = params;
-      const nodeHashesRepository = explorerManager.getRepository<NodeHashEntity>(ExplorerAppEntitiesNames.nodeHashes);
-      const nodesRepository = explorerManager.getRepository<NodeEntity>(ExplorerAppEntitiesNames.nodes);
-      const [nodeHashFoundError, nodeHashFound] = await exec(nodeHashesRepository.findOne({ hash: nodeHash }));
-      if (nodeHashFoundError) {
-        throw new ExplorerInternalServerError(nodeHashFoundError.message);
-      }
-
-      const [nodeFoundError, nodeFound] = await exec(nodesRepository.findOne({ name }));
-      if (nodeFoundError) {
-        throw new ExplorerInternalServerError(nodeFoundError.message);
-      }
-      let node = nodeFound;
-      // if we didn't have node data with this name create it
-      if (!nodeFound) {
-        const nodeInfo = nodesRepository.create({
-          name,
-        });
-        const [nodeError, nodeCreated] = await exec(nodesRepository.save(nodeInfo));
-        if (nodeError) {
-          throw new ExplorerInternalServerError(nodeError.message);
-        }
-        node = nodeCreated;
-      }
-
-      if (isActive && nodeFound) {
-        const [updateError] = await exec(nodeHashesRepository.update({ nodeId: node.id }, { isActive: false }));
-        if (updateError) {
-          throw new ExplorerInternalServerError(updateError.message);
-        }
-      }
-
-      if (!nodeHash) {
-        const newNodeHash = nodeHashesRepository.create({
-          hash: nodeHash,
-          nodeId: node.id,
-          isActive,
-        });
-
-        const [nodeHashEntityError] = await exec(nodeHashesRepository.save(newNodeHash));
-        if (nodeHashEntityError) {
-          throw new ExplorerInternalServerError(nodeHashEntityError.message);
-        }
-      } else {
-        nodeHashFound.nodeId = nodeFound.id;
-        const [nodeHashEntityError] = await exec(nodeHashesRepository.save(nodeHashFound));
-        if (nodeHashEntityError) {
-          throw new ExplorerInternalServerError(nodeHashEntityError.message);
-        }
-      }
-
       return this.getInfo({ nodeHash });
     } catch (error) {
       this.logger.error(error);

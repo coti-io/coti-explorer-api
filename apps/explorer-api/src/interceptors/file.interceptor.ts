@@ -1,7 +1,6 @@
 import { CallHandler, ExecutionContext, Injectable, NestInterceptor } from '@nestjs/common';
 import { Observable } from 'rxjs';
 export interface ExtendedMulterFile extends Express.Multer.File {
-  uuid: string;
   hash: string;
 }
 

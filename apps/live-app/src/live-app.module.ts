@@ -4,9 +4,10 @@ import { ConfigService } from '@nestjs/config';
 
 import { AppGateway } from './gateway';
 import { services } from './services';
+import { HttpModule } from '@nestjs/axios';
 
 @Module({
-  imports: [validate(), dbAppInit(), explorerDbInit()],
+  imports: [validate(), HttpModule, dbAppInit(), explorerDbInit(), explorerDbInit()],
   controllers: [],
   providers: [ConfigService, AppGateway, ...services],
 })
