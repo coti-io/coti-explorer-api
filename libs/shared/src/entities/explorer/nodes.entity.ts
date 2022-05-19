@@ -37,3 +37,14 @@ export class NodeEntity extends BaseEntity {
   @OneToMany(() => NodeHashEntity, nodeHashes => nodeHashes.node)
   nodeHashes: NodeHashEntity[];
 }
+
+export const getNodeUpdate = (): string => {
+  return `
+    SELECT 
+    nodes.id
+    FROM
+    nodes as nodes
+    WHERE 
+    updateTime > DATE_ADD(NOW(), INTERVAL -10 MINUTE)
+  `;
+};

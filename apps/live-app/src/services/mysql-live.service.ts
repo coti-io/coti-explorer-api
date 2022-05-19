@@ -16,11 +16,12 @@ import { AppGateway } from '../gateway';
 const firstRunMap = {};
 
 export enum SocketEvents {
-  NewTransactionCreated = 'deposit_transaction_created',
-  TransactionConfirmed = 'deposit_transaction_confirmed',
   GeneralTransactionsNotification = '/topic/transactions',
   AddressTransactionsNotification = '/topic/addressTransactions',
   TransactionDetails = '/topic/transactionDetails',
+  NodeUpdates = 'node_updates',
+  TransactionConfirmationUpdate = 'transaction_confirmation_update',
+  TreasuryTotalsUpdates = 'treasury_totals_updates',
 }
 
 type MonitoredTx = {
@@ -89,40 +90,6 @@ export class MysqlLiveService {
     } catch (error) {
       return Promise.reject(error);
     }
-
-    this.liveConnection
-      .select(getNewTransactionsQuery(), [
-        {
-          table: `transactions`,
-        },
-      ])
-      .on('update', async (diff: Diff) => {
-        const event = SocketEvents.NewTransactionCreated;
-        if (!firstRunMap[event]) {
-          firstRunMap[event] = true;
-          return;
-        }
-        if (diff.added && diff.added.length > 0) {
-          await this.eventHandler(event, diff.added);
-        }
-      });
-
-    this.liveConnection
-      .select(getConfirmedTransactionsQuery(), [
-        {
-          table: `transactions`,
-        },
-      ])
-      .on('update', (diff: Diff) => {
-        const event = SocketEvents.TransactionConfirmed;
-        if (!firstRunMap[event]) {
-          firstRunMap[event] = true;
-          return;
-        }
-        if (diff.added && diff.added.length > 0) {
-          this.eventHandler(event, diff.added);
-        }
-      });
   }
 
   onBeforeExit(): void {

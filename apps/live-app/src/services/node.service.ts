@@ -3,18 +3,28 @@ import { ConfigService } from '@nestjs/config';
 import { HttpService } from '@nestjs/axios';
 import { firstValueFrom } from 'rxjs';
 import { AxiosResponse } from 'axios';
-import { FullnodeListItem, NodeHashToActivityPercentage, NodeListResponse, TotalsByPercentageNodesRequest, TotalsByPercentageNodesResponse } from '../dtos/node.dto';
+import {
+  FullnodeListItem,
+  NodeActivationRequest,
+  NodeActivationResponse,
+  NodeHashToActivityPercentage,
+  NodeListResponse,
+  TotalsByPercentageNodesRequest,
+  TotalsByPercentageNodesResponse,
+} from '../dtos/node.dto';
 import { getManager } from 'typeorm';
 import { exec, ExplorerAppEntitiesNames, NodeEntity } from '@app/shared';
 import { ExplorerInternalServerError } from '../../../explorer-api/src/errors';
 import moment from 'moment';
 import { DateYMDString } from '../types/date.type';
+import { AppGateway } from '../gateway';
+import { SocketEvents } from './mysql-live.service';
 
 @Injectable()
 export class NodeService {
   private readonly logger = new Logger('TaskService');
   private readonly nodeManagerUrl: string;
-  constructor(private readonly configService: ConfigService, private httpService: HttpService) {
+  constructor(private readonly configService: ConfigService, private httpService: HttpService, private appGateway: AppGateway) {
     this.nodeManagerUrl = this.configService.get('NODE_MANAGER_URL');
   }
 
@@ -22,6 +32,7 @@ export class NodeService {
     try {
       // get all the nodes to work on from db
       const manager = getManager();
+      const nodeUpdateEvents = [];
       const nodeRepository = manager.getRepository<NodeEntity>(ExplorerAppEntitiesNames.nodes);
       const nodeQuery = nodeRepository.createQueryBuilder('n').innerJoinAndSelect('n.nodeHashes', 'nh');
       const [nodesError, nodes] = await exec(nodeQuery.getMany());
@@ -47,6 +58,11 @@ export class NodeService {
       for (const node of nodes) {
         const nodeHash = node.nodeHashes.find(nh => nh.isActive).hash;
 
+        const [nodeActivationTimeError, nodeActivationTime] = await exec(this.getNodeActivationTime({ nodeHash }));
+        if (nodeActivationTimeError) {
+          throw nodeActivationTimeError;
+        }
+
         const fullNodeItemList: FullnodeListItem = nodeList.data.nodes.FullNodes.find(n => n.nodeHash === nodeHash);
         if (!fullNodeItemList) {
           this.logger.warn(`We monitor node with hash ${nodeHash} that does not exists in node manager`);
@@ -60,8 +76,17 @@ export class NodeService {
         node.uptimeLast7Days = totalsByPercentage.sevenDays[nodeHash]?.percentage.toString() || '0';
         node.uptimeLast14Days = totalsByPercentage.sevenDays[nodeHash]?.percentage.toString() || '0';
         node.uptimeLast30Days = totalsByPercentage.sevenDays[nodeHash]?.percentage.toString() || '0';
+        node.activationTime = nodeActivationTime.data.activationTime.toString();
+        node.originalActivationTime = nodeActivationTime.data.originalActivationTime.toString();
+        node.link = fullNodeItemList.url;
+
+        nodeUpdateEvents.push(this.appGateway.sendMessageToRoom(nodeHash, SocketEvents.NodeUpdates, node));
       }
+
       await nodeRepository.save(nodes);
+      Promise.all(nodeUpdateEvents).catch(err => {
+        this.logger.error(err);
+      });
     } catch (error) {
       this.logger.error(error);
     }
@@ -95,5 +120,9 @@ export class NodeService {
 
   totalsByPercentageNodes(body: TotalsByPercentageNodesRequest): Promise<AxiosResponse<TotalsByPercentageNodesResponse>> {
     return firstValueFrom(this.httpService.post(`${this.nodeManagerUrl}/statistics/totalsByPercentageNodes`, body));
+  }
+
+  getNodeActivationTime(body: NodeActivationRequest): Promise<AxiosResponse<NodeActivationResponse>> {
+    return firstValueFrom(this.httpService.post(`${this.nodeManagerUrl}/statistics/nodeActivationTime`, body));
   }
 }

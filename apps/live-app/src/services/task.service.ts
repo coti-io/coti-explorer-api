@@ -3,12 +3,13 @@ import { ConfigService } from '@nestjs/config';
 import { exec } from '@app/shared';
 import * as moment from 'moment';
 import { NodeService } from './node.service';
+import { CacheService } from './cache.service';
 
 const iterationCounter = new Map();
 @Injectable()
 export class TaskService implements OnModuleInit {
   private readonly logger = new Logger('TaskService');
-  constructor(private readonly configService: ConfigService, private readonly nodeService: NodeService) {}
+  constructor(private readonly configService: ConfigService, private readonly nodeService: NodeService, private readonly cacheService: CacheService) {}
 
   onModuleInit(): void {
     this.init();
@@ -16,6 +17,8 @@ export class TaskService implements OnModuleInit {
 
   async init(): Promise<void> {
     this.runEveryXSeconds('updateNodeData', this.nodeService.updateNodesData.bind(this.nodeService), 60);
+    this.runEveryXSeconds('updateConfirmationTime', this.cacheService.updateTransactionConfirmationTime.bind(this.cacheService), 60);
+    this.runEveryXSeconds('updateTreasuryTotals', this.cacheService.updateTreasuryTotals.bind(this.cacheService), 60);
   }
 
   async runEveryXSeconds<T>(name: string, functionToRun: () => Promise<T>, minIntervalInSeconds: number): Promise<void> {

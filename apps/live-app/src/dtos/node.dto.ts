@@ -52,3 +52,12 @@ export class FeeData {
   minimumFee: number;
   maximumFee: number;
 }
+
+export class NodeActivationRequest {
+  nodeHash: string;
+}
+
+export class NodeActivationResponse extends NodeManagerResponse {
+  activationTime: number;
+  originalActivationTime: number;
+}

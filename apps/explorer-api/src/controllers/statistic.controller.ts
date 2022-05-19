@@ -1,5 +1,5 @@
 import { Controller, HttpCode, Post, UseFilters, UseInterceptors } from '@nestjs/common';
-import { TransactionConfirmationTimeResponseDto, WalletCountResponseDto } from '@app/shared';
+import { TransactionConfirmationTimeResponseDto, TreasuryTotalsResponseDto, WalletCountResponseDto } from '@app/shared';
 import { ExplorerExceptionFilter } from '../filters';
 import { ResponseInterceptor } from '../interceptors';
 import { TransactionService, WalletService } from '../services';
@@ -21,6 +21,12 @@ export class StatisticController {
   @Post('transaction-confirmation-time')
   @HttpCode(200)
   async getTransactionConfirmationTime(): Promise<TransactionConfirmationTimeResponseDto> {
-    return this.transactionService.getConfirmationTime();
+    return this.transactionService.getTransactionsConfirmationTime();
+  }
+
+  @Post('treasury-totals')
+  @HttpCode(200)
+  async getTreasuryTotals(): Promise<TreasuryTotalsResponseDto> {
+    return this.transactionService.getTreasuryTotals();
   }
 }

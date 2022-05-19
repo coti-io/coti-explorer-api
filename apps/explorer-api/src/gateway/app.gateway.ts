@@ -31,12 +31,15 @@ export class AppGateway implements OnGatewayInit, OnGatewayConnection, OnGateway
   }
 
   @SubscribeMessage('subscribe')
-  subscribe(client: Socket, payload: { address?: string; hash?: string; nodeHash?: string; tokenHash?: string }) {
+  subscribe(client: Socket, payload: { address?: string; hash?: string; nodeHash?: string; tokenHash?: string; nodeUpdates?: string; treasuryTotals?: string }) {
     try {
       if (!payload) return;
-      const { address, hash, nodeHash, tokenHash } = payload;
+      const { address, hash, nodeHash, tokenHash, nodeUpdates, treasuryTotals } = payload;
       let addressLog = '';
       let hashLog = '';
+      let nodeHashLog = '';
+      let nodeUpdatesLog = '';
+      let treasuryTotalsLog = '';
       if (address) {
         client.join(address);
         addressLog = `[address ${address}]`;
@@ -47,24 +50,35 @@ export class AppGateway implements OnGatewayInit, OnGatewayConnection, OnGateway
       }
       if (nodeHash) {
         client.join(nodeHash);
-        hashLog = `[hash ${nodeHash}]`;
+        nodeHashLog = `[hash ${nodeHash}]`;
       }
       if (tokenHash) {
         client.join(tokenHash);
         hashLog = `[hash ${tokenHash}]`;
       }
-      this.logger.log(`[subscribe][socketId: ${client.id}]${addressLog}${hashLog}`);
+      if (nodeUpdates) {
+        client.join(nodeUpdates);
+        nodeUpdatesLog = `[hash ${nodeUpdates}]`;
+      }
+      if (treasuryTotals) {
+        client.join(treasuryTotals);
+        treasuryTotalsLog = `[treasuryTotals ${treasuryTotals}]`;
+      }
+      this.logger.log(`[subscribe][socketId: ${client.id}]${addressLog}${hashLog}${nodeHashLog}${nodeUpdatesLog}${treasuryTotalsLog}`);
     } catch (error) {
       this.logger.warn('socket subscribe failed');
     }
   }
 
   @SubscribeMessage('unsubscribe')
-  unsubscribe(client: Socket, payload: { address?: string; hash?: string; nodeHash?: string; tokenHash?: string }) {
+  unsubscribe(client: Socket, payload: { address?: string; hash?: string; nodeHash?: string; tokenHash?: string; nodeUpdates?: string; treasuryTotals?: string }) {
     try {
-      const { address, hash, nodeHash, tokenHash } = payload;
+      const { address, hash, nodeHash, tokenHash, nodeUpdates, treasuryTotals } = payload;
       let addressLog = '';
       let hashLog = '';
+      const nodeHashLog = '';
+      let nodeUpdatesLog = '';
+      let treasuryTotalsLog = '';
       if (address) {
         client.leave(address);
         addressLog = `[address ${address}]`;
@@ -81,7 +95,15 @@ export class AppGateway implements OnGatewayInit, OnGatewayConnection, OnGateway
         client.leave(tokenHash);
         hashLog = `[hash ${tokenHash}]`;
       }
-      this.logger.log(`[unsubscribe][socketId: ${client.id}]${addressLog}${hashLog}`);
+      if (nodeUpdates) {
+        client.leave(nodeUpdates);
+        nodeUpdatesLog = `[nodeUpdates ${nodeUpdates}]`;
+      }
+      if (treasuryTotals) {
+        client.leave(treasuryTotals);
+        treasuryTotalsLog = `[treasuryTotals ${treasuryTotals}]`;
+      }
+      this.logger.log(`[unsubscribe][socketId: ${client.id}]${addressLog}${hashLog}${nodeHashLog}${nodeUpdatesLog}${treasuryTotalsLog}${nodeUpdatesLog}${treasuryTotalsLog}`);
     } catch (error) {
       this.logger.warn('socket unsubscribe failed');
     }

@@ -15,6 +15,10 @@ import {
   getTransactionsById,
   getTokensSymbols,
   DbAppEntitiesNames,
+  ConfirmationTimeEntity,
+  ExplorerAppEntitiesNames,
+  TreasuryTotalsResponseDto,
+  TreasuryTotalsEntity,
 } from '@app/shared';
 import { ConfigService } from '@nestjs/config';
 
@@ -211,6 +215,49 @@ export class TransactionService {
       }
       const currencySymbolMap = await getTokensSymbols(transactions);
       return new TransactionsResponseDto(countResponse.count, transactions, currencySymbolMap);
+    } catch (error) {
+      this.logger.error(error);
+      throw new ExplorerError(error);
+    }
+  }
+
+  async getTransactionsConfirmationTime(): Promise<TransactionConfirmationTimeResponseDto> {
+    const manager = getManager();
+    try {
+      const [lastConfirmationError, lastConfirmation] = await exec(
+        manager.getRepository<ConfirmationTimeEntity>(ExplorerAppEntitiesNames.confirmationTimes).createQueryBuilder().orderBy({ id: 'DESC' }).getOneOrFail(),
+      );
+
+      if (lastConfirmationError) throw lastConfirmationError;
+
+      return {
+        avg: lastConfirmation.average,
+        min: lastConfirmation.minimum,
+        max: lastConfirmation.maximum,
+      };
+    } catch (error) {
+      this.logger.error(error);
+      throw new ExplorerError(error);
+    }
+  }
+
+  async getTreasuryTotals(): Promise<TreasuryTotalsResponseDto> {
+    const manager = getManager();
+    try {
+      const [lastTotalsError, lastTotals] = await exec(
+        manager.getRepository<TreasuryTotalsEntity>(ExplorerAppEntitiesNames.treasuryTotals).createQueryBuilder().orderBy({ id: 'DESC' }).getOneOrFail(),
+      );
+
+      if (lastTotalsError) throw lastTotalsError;
+
+      return {
+        totalCotiInPool: lastTotals.totalCotiInPool,
+        totalUnlocked: lastTotals.totalUnlocked,
+        totalUnlockedUsd: lastTotals.totalUnlockedUsd,
+        totalLevragedCoti: lastTotals.totalLevragedCoti,
+        tvl: lastTotals.tvl,
+        maxApy: lastTotals.maxApy,
+      };
     } catch (error) {
       this.logger.error(error);
       throw new ExplorerError(error);
