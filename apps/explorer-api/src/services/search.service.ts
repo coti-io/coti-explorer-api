@@ -17,7 +17,9 @@ export class SearchService {
         .createQueryBuilder('c')
         .innerJoinAndSelect('c.originatorCurrencyData', 'ocd')
         .where('ocd.name like :name', { name: `${searchString}%` })
-        .orWhere('ocd.symbol like :symbol', { symbol: `${searchString}%` });
+        .orWhere('ocd.symbol like :symbol', { symbol: `${searchString}%` })
+        .orWhere('c.hash like :hash', { hash: `${searchString}%` });
+
       const [currenciesError, currencies] = await exec(currencyQuery.getMany());
       if (currenciesError) {
         throw currenciesError;
