@@ -19,6 +19,7 @@ import {
   ExplorerAppEntitiesNames,
   TreasuryTotalsResponseDto,
   TreasuryTotalsEntity,
+  NodeTransactionsResponseDto,
 } from '@app/shared';
 import { ConfigService } from '@nestjs/config';
 
@@ -134,7 +135,7 @@ export class TransactionService {
     }
   }
 
-  async getTransactionByNodeHash(limit: number, offset: number, nodeHash: string): Promise<TransactionsResponseDto> {
+  async getTransactionByNodeHash(limit: number, offset: number, nodeHash: string): Promise<NodeTransactionsResponseDto> {
     const manager = getManager('db_app');
     try {
       const query = manager
@@ -160,15 +161,8 @@ export class TransactionService {
         throw transactionsError;
       }
 
-      const countQuery = manager.getRepository<DbAppTransaction>('transactions').createQueryBuilder('t').select('COUNT(t.id) as count').where('t.nodeHash=:nodeHash', { nodeHash });
-
-      const [countError, countResponse] = await exec(countQuery.getRawOne<{ count: number }>());
-
-      if (countError) {
-        throw countError;
-      }
       const currencySymbolMap = await getTokensSymbols(transactions);
-      return new TransactionsResponseDto(countResponse.count, transactions, currencySymbolMap);
+      return new NodeTransactionsResponseDto(transactions, currencySymbolMap);
     } catch (error) {
       this.logger.error(error);
       throw new ExplorerError(error);

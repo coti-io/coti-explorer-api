@@ -35,7 +35,7 @@ export class CacheService {
     const [saveError] = await exec(manager.save(entity));
     if (saveError) throw saveError;
 
-    await this.appGateway.sendMessageToRoom('', SocketEvents.TransactionConfirmationUpdate, confirmationTime);
+    await this.appGateway.sendMessageToRoom(SocketEvents.TransactionConfirmationUpdate, SocketEvents.TransactionConfirmationUpdate, confirmationTime);
   }
 
   async updateTreasuryTotals(): Promise<void> {
@@ -49,7 +49,7 @@ export class CacheService {
 
     if (saveError) throw saveError;
 
-    await this.appGateway.sendMessageToRoom('', SocketEvents.TreasuryTotalsUpdates, getTotalsRes.data);
+    await this.appGateway.sendMessageToRoom(SocketEvents.TreasuryTotalsUpdates, SocketEvents.TreasuryTotalsUpdates, getTotalsRes.data);
 
     return;
   }

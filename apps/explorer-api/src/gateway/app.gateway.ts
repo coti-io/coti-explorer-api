@@ -2,6 +2,7 @@ import { Logger } from '@nestjs/common';
 import { OnGatewayConnection, OnGatewayDisconnect, OnGatewayInit, SubscribeMessage, WebSocketGateway, WebSocketServer } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
 import { corsConfig } from '../configurations';
+import {SocketEvents} from "../../../live-app/src/services";
 
 @WebSocketGateway({ cors: { ...corsConfig } })
 export class AppGateway implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect {
@@ -31,7 +32,7 @@ export class AppGateway implements OnGatewayInit, OnGatewayConnection, OnGateway
   }
 
   @SubscribeMessage('subscribe')
-  subscribe(client: Socket, payload: { address?: string; hash?: string; nodeHash?: string; tokenHash?: string; nodeUpdates?: string; treasuryTotals?: string }) {
+  subscribe(client: Socket, payload: { address?: string; hash?: string; nodeHash?: string; tokenHash?: string; nodeUpdates?: boolean; treasuryTotals?: boolean }) {
     try {
       if (!payload) return;
       const { address, hash, nodeHash, tokenHash, nodeUpdates, treasuryTotals } = payload;
@@ -57,11 +58,11 @@ export class AppGateway implements OnGatewayInit, OnGatewayConnection, OnGateway
         hashLog = `[hash ${tokenHash}]`;
       }
       if (nodeUpdates) {
-        client.join(nodeUpdates);
-        nodeUpdatesLog = `[hash ${nodeUpdates}]`;
+        client.join(SocketEvents.NodeUpdates);
+        nodeUpdatesLog = `[nodeUpdates ${nodeUpdates}]`;
       }
       if (treasuryTotals) {
-        client.join(treasuryTotals);
+        client.join(SocketEvents.TreasuryTotalsUpdates);
         treasuryTotalsLog = `[treasuryTotals ${treasuryTotals}]`;
       }
       this.logger.log(`[subscribe][socketId: ${client.id}]${addressLog}${hashLog}${nodeHashLog}${nodeUpdatesLog}${treasuryTotalsLog}`);
@@ -71,7 +72,7 @@ export class AppGateway implements OnGatewayInit, OnGatewayConnection, OnGateway
   }
 
   @SubscribeMessage('unsubscribe')
-  unsubscribe(client: Socket, payload: { address?: string; hash?: string; nodeHash?: string; tokenHash?: string; nodeUpdates?: string; treasuryTotals?: string }) {
+  unsubscribe(client: Socket, payload: { address?: string; hash?: string; nodeHash?: string; tokenHash?: string; nodeUpdates?: boolean; treasuryTotals?: boolean }) {
     try {
       const { address, hash, nodeHash, tokenHash, nodeUpdates, treasuryTotals } = payload;
       let addressLog = '';
@@ -96,11 +97,11 @@ export class AppGateway implements OnGatewayInit, OnGatewayConnection, OnGateway
         hashLog = `[hash ${tokenHash}]`;
       }
       if (nodeUpdates) {
-        client.leave(nodeUpdates);
+        client.leave(SocketEvents.NodeUpdates);
         nodeUpdatesLog = `[nodeUpdates ${nodeUpdates}]`;
       }
       if (treasuryTotals) {
-        client.leave(treasuryTotals);
+        client.leave(SocketEvents.TreasuryTotalsUpdates);
         treasuryTotalsLog = `[treasuryTotals ${treasuryTotals}]`;
       }
       this.logger.log(`[unsubscribe][socketId: ${client.id}]${addressLog}${hashLog}${nodeHashLog}${nodeUpdatesLog}${treasuryTotalsLog}${nodeUpdatesLog}${treasuryTotalsLog}`);

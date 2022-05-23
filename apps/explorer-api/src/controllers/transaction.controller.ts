@@ -6,7 +6,7 @@ import {
   GetAddressTransactionsDto,
   GetNodeTransactionsDto,
   GetTokenTransactionsDto,
-  GetTransactionByHashRequestDto,
+  GetTransactionByHashRequestDto, NodeTransactionsResponseDto,
   TransactionResponseDto,
   TransactionsResponseDto,
 } from '@app/shared';
@@ -39,7 +39,7 @@ export class TransactionController {
 
   @Post('node')
   @HttpCode(200)
-  async getNodeTransactions(@Body() body: GetNodeTransactionsDto): Promise<TransactionsResponseDto> {
+  async getNodeTransactions(@Body() body: GetNodeTransactionsDto): Promise<NodeTransactionsResponseDto> {
     return this.transactionService.getTransactionByNodeHash(body.limit, body.offset, body.nodeHash);
   }
 

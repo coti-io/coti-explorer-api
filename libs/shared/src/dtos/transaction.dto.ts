@@ -128,6 +128,17 @@ export class TransactionsResponseDto {
   }
 }
 
+export class NodeTransactionsResponseDto {
+  transactionsData: TransactionDto[];
+  totalTransactions: number;
+  tokensSymbols: { [key: string]: string };
+
+  constructor(transactions: DbAppTransaction[], tokensSymbols: { [key: string]: string }) {
+    this.transactionsData = transactions.map((x: DbAppTransaction) => new TransactionDto(x, tokensSymbols));
+    this.tokensSymbols = tokensSymbols;
+  }
+}
+
 export class TransactionResponseDto {
   transactionData: TransactionDto;
 }
