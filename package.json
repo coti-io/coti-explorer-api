@@ -13,6 +13,7 @@
     "start-explorer-api:dev": "nest start --watch explorer-api",
     "start-explorer-api:debug": "nest start --debug --watch explorer-api",
     "start-explorer-api:prod": "node dist/apps/explorer-api/main",
+    "build-live-app": "nest build live-app",
     "start-live": "nest start live-app",
     "start-live:dev": "nest start --watch live-app",
     "start-live:debug": "nest start --debug --watch live-app",
