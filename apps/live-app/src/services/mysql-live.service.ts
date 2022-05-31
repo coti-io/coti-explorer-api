@@ -162,6 +162,32 @@ export class MysqlLiveService {
     }
     return Object.keys(addressToNotifyMap);
   }
+  getTransactionCurrencyHashesToNotify(transaction: DbAppTransaction): string[] {
+    const nativeCurrencyHash = this.configService.get<string>('COTI_CURRENCY_HASH');
+    const tokenTransactionsToNotifyMap = {
+      [nativeCurrencyHash]: 1,
+    };
+    for (const bt of transaction.inputBaseTransactions) {
+      if (bt.currencyHash) tokenTransactionsToNotifyMap[bt.currencyHash] = 1;
+    }
+    for (const bt of transaction.receiverBaseTransactions) {
+      if (bt.currencyHash) tokenTransactionsToNotifyMap[bt.currencyHash] = 1;
+    }
+    for (const bt of transaction.fullnodeFeeBaseTransactions) {
+      if (bt.currencyHash) tokenTransactionsToNotifyMap[bt.currencyHash] = 1;
+    }
+    for (const bt of transaction.networkFeeBaseTransactions) {
+      if (bt.currencyHash) tokenTransactionsToNotifyMap[bt.currencyHash] = 1;
+    }
+    for (const bt of transaction.tokenGenerationFeeBaseTransactions) {
+      if (bt.currencyHash) tokenTransactionsToNotifyMap[bt.currencyHash] = 1;
+    }
+    for (const bt of transaction.tokenMintingFeeBaseTransactions) {
+      if (bt.currencyHash) tokenTransactionsToNotifyMap[bt.currencyHash] = 1;
+    }
+
+    return Object.keys(tokenTransactionsToNotifyMap);
+  }
 
   async eventHandler(event: SocketEvents, transactionEvents: any[]) {
     const msgPromises = [];
@@ -175,6 +201,7 @@ export class MysqlLiveService {
       const addressTotalTransactionCountMap = await this.getTotalTransactionCountMap(allAddressesToNotify);
       for (const transaction of transactionEntities) {
         const addressesToNotify = this.getTransactionAddressesToNotify(transaction);
+        const getTransactionCurrencyHashesToNotify = this.getTransactionCurrencyHashesToNotify(transaction);
 
         const eventMessage = new TransactionDto(transaction, currencySymbolMap);
         this.logger.debug(`about to send event:${event} message: ${JSON.stringify(eventMessage)}`);
@@ -183,6 +210,9 @@ export class MysqlLiveService {
           msgPromises.push(
             this.gateway.sendMessageToRoom(addressToNotify, `${SocketEvents.AddressTransactionsTotalNotification}`, addressTotalTransactionCountMap[addressToNotify]),
           );
+        }
+        for (const currencyHash of getTransactionCurrencyHashesToNotify) {
+          msgPromises.push(this.gateway.sendMessageToRoom(currencyHash, `${SocketEvents.TokenTransactionsNotification}`, eventMessage));
         }
         msgPromises.push(this.gateway.sendMessageToRoom(transaction.nodeHash, `${SocketEvents.NodeTransactionsNotification}`, eventMessage));
         msgPromises.push(this.gateway.sendMessageToRoom(transaction.hash, `${SocketEvents.TransactionDetails}`, eventMessage));
