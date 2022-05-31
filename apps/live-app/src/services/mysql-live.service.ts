@@ -16,9 +16,12 @@ import { AppGateway } from '../gateway';
 const firstRunMap = {};
 
 export enum SocketEvents {
-  GeneralTransactionsNotification = '/topic/transactions',
-  AddressTransactionsNotification = '/topic/addressTransactions',
-  TransactionDetails = '/topic/transactionDetails',
+  GeneralTransactionsNotification = 'transactions',
+  AddressTransactionsNotification = 'addressTransactions',
+  AddressTransactionsTotalNotification = 'addressTransactionsTotal',
+  NodeTransactionsNotification = 'nodeTransactions',
+  TokenTransactionsNotification = 'tokenTransactions',
+  TransactionDetails = 'transactionDetails',
   NodeUpdates = 'node_updates',
   TransactionConfirmationUpdate = 'transaction_confirmation_update',
   TreasuryTotalsUpdates = 'treasury_totals_updates',
@@ -176,17 +179,13 @@ export class MysqlLiveService {
         const eventMessage = new TransactionDto(transaction, currencySymbolMap);
         this.logger.debug(`about to send event:${event} message: ${JSON.stringify(eventMessage)}`);
         for (const addressToNotify of addressesToNotify) {
-          msgPromises.push(this.gateway.sendMessageToRoom(addressToNotify, `${SocketEvents.AddressTransactionsNotification}/${addressToNotify}`, eventMessage));
+          msgPromises.push(this.gateway.sendMessageToRoom(addressToNotify, `${SocketEvents.AddressTransactionsNotification}`, eventMessage));
           msgPromises.push(
-            this.gateway.sendMessageToRoom(
-              addressToNotify,
-              `${SocketEvents.AddressTransactionsNotification}/${addressToNotify}/total`,
-              addressTotalTransactionCountMap[addressToNotify],
-            ),
+            this.gateway.sendMessageToRoom(addressToNotify, `${SocketEvents.AddressTransactionsTotalNotification}`, addressTotalTransactionCountMap[addressToNotify]),
           );
         }
-
-        msgPromises.push(this.gateway.sendMessageToRoom(transaction.hash, `${SocketEvents.TransactionDetails}/${transaction.hash}`, eventMessage));
+        msgPromises.push(this.gateway.sendMessageToRoom(transaction.nodeHash, `${SocketEvents.NodeTransactionsNotification}`, eventMessage));
+        msgPromises.push(this.gateway.sendMessageToRoom(transaction.hash, `${SocketEvents.TransactionDetails}`, eventMessage));
         msgPromises.push(this.gateway.sendBroadcast(SocketEvents.GeneralTransactionsNotification, eventMessage));
       }
 

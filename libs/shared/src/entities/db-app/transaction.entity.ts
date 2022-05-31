@@ -38,6 +38,9 @@ export class DbAppTransaction extends BaseEntity {
   senderHash: string;
 
   @Column()
+  nodeHash: string;
+
+  @Column()
   senderTrustScore: number;
 
   @Column()
