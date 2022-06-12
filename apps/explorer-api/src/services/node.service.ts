@@ -71,8 +71,8 @@ export class NodeService {
     const { nodeHash, name, isActive } = params;
     const [updateNodeResponseError] = await exec(
       explorerManager.transaction(async (manager: EntityManager) => {
-        const nodeHashesRepository = explorerManager.getRepository<NodeHashEntity>(ExplorerAppEntitiesNames.nodeHashes);
-        const nodesRepository = explorerManager.getRepository<NodeEntity>(ExplorerAppEntitiesNames.nodes);
+        const nodeHashesRepository = manager.getRepository<NodeHashEntity>(ExplorerAppEntitiesNames.nodeHashes);
+        const nodesRepository = manager.getRepository<NodeEntity>(ExplorerAppEntitiesNames.nodes);
         const [nodeHashFoundError, nodeHashFound] = await exec(nodeHashesRepository.findOne({ hash: nodeHash }));
         if (nodeHashFoundError) {
           throw new ExplorerInternalServerError(nodeHashFoundError.message);
