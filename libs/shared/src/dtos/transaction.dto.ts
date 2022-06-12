@@ -192,7 +192,7 @@ export class InputBaseTransactionDto extends BaseTransactionDto {
 }
 
 export class FullnodeFeeBaseTransactionDto extends BaseTransactionDto {
-  originalAmount: number;
+  originalAmount: string;
   originalCurrencyHash: string;
 
   constructor(baseTransaction: FullnodeFeeBaseTransaction, currencySymbolMap: { [key: string]: string }) {
