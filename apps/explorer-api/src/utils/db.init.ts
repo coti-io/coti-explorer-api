@@ -46,8 +46,6 @@ export function dbAppInit() {
       timezone: 'Z',
       connectTimeout: 60 * 60 * 1000,
       timeout: 60 * 60 * 1000,
-      supportBigNumbers: true,
-      bigNumberStrings: true,
     }),
   });
 }

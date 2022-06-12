@@ -19,8 +19,10 @@ export class CurrencyTypeData extends BaseEntity {
 
   @Column()
   protectionModel: string;
+
   @Column()
   signerHash: string;
+
   @Column('decimal')
   currencyTypeDataCreateTime: string;
 

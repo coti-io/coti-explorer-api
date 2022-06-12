@@ -9,6 +9,7 @@ import { OriginatorCurrencyData } from '@app/shared';
 export class TokenGenerationServiceData extends BaseEntity {
   @Column()
   baseTransactionId: number;
+
   @Column('decimal')
   feeAmount: string;
 

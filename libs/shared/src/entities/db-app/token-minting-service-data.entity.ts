@@ -7,16 +7,22 @@ import { TokenMintingFeeBaseTransaction } from '@app/shared/entities/db-app/toke
 export class TokenMintingServiceData extends BaseEntity {
   @Column()
   baseTransactionId: number;
+
   @Column()
   mintingCurrencyHash: string;
+
   @Column()
   mintingAmount: string;
+
   @Column('decimal')
   serviceDataCreateTime: string;
+
   @Column()
   receiverAddress: string;
+
   @Column('decimal')
   feeAmount: string;
+
   @Column()
   signerHash: string;
 

@@ -6,7 +6,7 @@ import { DbAppEntitiesNames } from './entities.names';
 @Entity(DbAppEntitiesNames.fullnodeFeeBaseTransactions)
 export class FullnodeFeeBaseTransaction extends BaseTransactionEntity {
   @Column('decimal')
-  originalAmount: number;
+  originalAmount: string;
 
   @Column('decimal')
   fullnodeFeeCreateTime: string;
