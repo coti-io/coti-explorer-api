@@ -1,7 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import LiveMysql from 'mysql-live-select';
-import { DbAppTransaction, exec, getTokensSymbols, getTransactionsById, getTransactionsCount, TransactionDto } from '@app/shared';
+import { DbAppTransaction, exec, getTokensSymbols, getTransactionsById, getTransactionsCount, getTransactionsQuery, TransactionDto } from '@app/shared';
 import { AppGateway } from '../gateway';
 
 const firstRunMap = {};
@@ -84,6 +84,23 @@ export class MysqlLiveService {
     } catch (error) {
       return Promise.reject(error);
     }
+
+    this.liveConnection
+      .select(getTransactionsQuery(), [
+        {
+          table: `transactions`,
+        },
+      ])
+      .on('update', async (diff: Diff) => {
+        const event = 'SocketEvents.NewTransactionCreated';
+        if (!firstRunMap[event]) {
+          firstRunMap[event] = true;
+          return;
+        }
+        if (diff.added && diff.added.length > 0) {
+          await this.eventHandler(diff.added);
+        }
+      });
   }
 
   onBeforeExit(): void {
@@ -182,7 +199,7 @@ export class MysqlLiveService {
     return Object.keys(tokenTransactionsToNotifyMap);
   }
 
-  async eventHandler(event: SocketEvents, transactionEvents: any[]) {
+  async eventHandler(transactionEvents: any[]) {
     const msgPromises = [];
     if (!transactionEvents?.length) return;
 
@@ -197,7 +214,6 @@ export class MysqlLiveService {
         const getTransactionCurrencyHashesToNotify = this.getTransactionCurrencyHashesToNotify(transaction);
 
         const eventMessage = new TransactionDto(transaction, currencySymbolMap);
-        this.logger.debug(`about to send event:${event} message: ${JSON.stringify(eventMessage)}`);
         for (const addressToNotify of addressesToNotify) {
           msgPromises.push(this.gateway.sendMessageToRoom(addressToNotify, `${SocketEvents.AddressTransactionsNotification}`, eventMessage));
           msgPromises.push(

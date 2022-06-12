@@ -79,7 +79,7 @@ export class DbAppTransaction extends BaseEntity {
   baseTransactions: (InputBaseTransaction | ReceiverBaseTransaction | FullnodeFeeBaseTransaction | NetworkFeeBaseTransaction)[];
 }
 
-export const getNewTransactionsQuery = (): string => {
+export const getTransactionsQuery = (): string => {
   return `
     SELECT 
     transactions.id
@@ -87,20 +87,6 @@ export const getNewTransactionsQuery = (): string => {
     transactions as transactions
     WHERE 
     updateTime > DATE_ADD(NOW(), INTERVAL -10 MINUTE)
-    AND transactionConsensusUpdateTime IS NULL
-    ORDER BY transactions.attachmentTime DESC
-  `;
-};
-export const getConfirmedTransactionsQuery = (): string => {
-  return `
-    SELECT 
-    transactions.id
-    FROM
-    transactions as transactions
-    WHERE 
-    updateTime > DATE_ADD(NOW(), INTERVAL -10 MINUTE)
-    AND transactionConsensusUpdateTime IS NOT NULL
-    ORDER BY transactions.attachmentTime DESC
   `;
 };
 
