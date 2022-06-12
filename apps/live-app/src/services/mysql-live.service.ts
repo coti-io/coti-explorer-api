@@ -13,9 +13,9 @@ export enum SocketEvents {
   NodeTransactionsNotification = 'nodeTransactions',
   TokenTransactionsNotification = 'tokenTransactions',
   TransactionDetails = 'transactionDetails',
-  NodeUpdates = 'node_updates',
-  TransactionConfirmationUpdate = 'transaction_confirmation_update',
-  TreasuryTotalsUpdates = 'treasury_totals_updates',
+  NodeUpdates = 'nodeUpdates',
+  TransactionConfirmationUpdate = 'transactionConfirmationUpdate',
+  TreasuryTotalsUpdates = 'treasuryTotalsUpdates',
 }
 
 type MonitoredTx = {
