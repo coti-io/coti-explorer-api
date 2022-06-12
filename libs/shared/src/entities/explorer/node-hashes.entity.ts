@@ -7,8 +7,10 @@ import { NodeEntity } from '@app/shared/entities';
 export class NodeHashEntity extends BaseEntity {
   @Column()
   nodeId: number;
+
   @Column()
   hash: string;
+
   @Column()
   isActive: boolean;
 

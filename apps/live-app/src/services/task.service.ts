@@ -17,7 +17,7 @@ export class TaskService implements OnModuleInit {
     this.init();
   }
 
-  async init(): Promise<void> {
+  init(): void {
     this.runEveryXSeconds('updateNodeData', this.nodeService.updateNodesData.bind(this.nodeService), 60);
     this.runEveryXSeconds('updateConfirmationTime', this.cacheService.updateTransactionConfirmationTime.bind(this.cacheService), 60);
     this.runEveryXSeconds('updateTreasuryTotals', this.cacheService.updateTreasuryTotals.bind(this.cacheService), 60);
@@ -25,7 +25,7 @@ export class TaskService implements OnModuleInit {
 
   async runEveryXSeconds<T>(name: string, functionToRun: () => Promise<T>, minIntervalInSeconds: number): Promise<void> {
     try {
-      let lastActivationTime = moment.now();
+      let lastActivationTime;
       iterationCounter.set(name, 1);
       this.logger.log(`[Task ${name}] [started]`);
       // noinspection InfiniteLoopJS

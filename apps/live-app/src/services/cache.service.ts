@@ -13,7 +13,7 @@ import { firstValueFrom } from 'rxjs';
 export class CacheService {
   private readonly logger = new Logger('CacheService');
   private totalValueLock: number;
-  private treasuryUrl: string;
+  private readonly treasuryUrl: string;
 
   constructor(private readonly configService: ConfigService, private appGateway: AppGateway, private httpService: HttpService) {
     this.treasuryUrl = this.configService.get<string>('TREASURY_URL');

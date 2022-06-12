@@ -6,16 +6,22 @@ import { ExplorerAppEntitiesNames } from './entities.names';
 export class TokenEntity extends BaseEntity {
   @Column()
   currencyHash: string;
+
   @Column()
   website: string;
+
   @Column()
   discord: string;
+
   @Column()
   telegram: string;
+
   @Column()
   twitter: string;
+
   @Column()
   gitbook: string;
+
   @Column()
   medium: string;
 }
