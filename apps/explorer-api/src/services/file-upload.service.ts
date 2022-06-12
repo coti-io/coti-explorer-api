@@ -1,5 +1,4 @@
-import { BadRequestException, HttpException, Injectable, InternalServerErrorException } from '@nestjs/common';
-import { Connection } from 'typeorm';
+import { HttpException, Injectable, InternalServerErrorException } from '@nestjs/common';
 import { S3 } from 'aws-sdk';
 import { exec } from '@app/shared';
 import { ConfigService } from '@nestjs/config';

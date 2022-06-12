@@ -15,7 +15,8 @@ export class TokenSearchResult {
   totalSupply: string;
   scale: number;
   currencyHash: string;
-  constructor(currency: Currency, toekn: TokenEntity) {
+
+  constructor(currency: Currency, token: TokenEntity) {
     this.name = currency.originatorCurrencyData.name;
     this.symbol = currency.originatorCurrencyData.symbol;
     this.description = currency.originatorCurrencyData.description;
@@ -25,6 +26,7 @@ export class TokenSearchResult {
     this.currencyHash = currency.hash;
   }
 }
+
 export class NodeSearchResult {
   name: string;
 

@@ -1,5 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { SearchResponseDto, NodeSearchResult, TokenSearchResult, Currency, DbAppEntitiesNames, ExplorerAppEntitiesNames, NodeEntity, TokenEntity, exec } from '@app/shared';
+import { Currency, DbAppEntitiesNames, exec, ExplorerAppEntitiesNames, NodeEntity, NodeSearchResult, SearchResponseDto, TokenEntity, TokenSearchResult } from '@app/shared';
 
 import { ExplorerError } from '../errors';
 import { getManager, In } from 'typeorm';

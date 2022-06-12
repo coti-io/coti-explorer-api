@@ -26,7 +26,9 @@ export class NodeListResponse extends NodeManagerResponse {
     FinancialServer: FinancialServerNodeListItem[];
   };
 }
+
 export type NodeHashToActivityPercentage = { [key: string]: { status: boolean; percentage: number } };
+
 export class TotalsByPercentageNodesResponse extends NodeManagerResponse {
   nodeHashToActivityPercentage: NodeHashToActivityPercentage;
 }

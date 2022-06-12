@@ -62,6 +62,7 @@ export class NodeInfoResponseDto {
 export class NodeHashDto {
   isActive: boolean;
   hash: string;
+
   constructor(nodeHash: NodeHashEntity) {
     this.hash = nodeHash.hash;
     this.isActive = nodeHash.isActive;

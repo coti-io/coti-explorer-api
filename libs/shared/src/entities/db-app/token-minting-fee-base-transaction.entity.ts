@@ -1,5 +1,5 @@
 import { Column, Entity, JoinColumn, ManyToOne, OneToOne } from 'typeorm';
-import { Currency, DbAppTransaction } from '.';
+import { DbAppTransaction } from '.';
 import { BaseTransactionEntity } from './base-transaction.entity';
 import { DbAppEntitiesNames } from './entities.names';
 import { TokenMintingServiceData } from '@app/shared/entities/db-app/token-minting-service-data.entity';

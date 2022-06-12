@@ -6,9 +6,11 @@ import { NodeService } from './node.service';
 import { CacheService } from './cache.service';
 
 const iterationCounter = new Map();
+
 @Injectable()
 export class TaskService implements OnModuleInit {
   private readonly logger = new Logger('TaskService');
+
   constructor(private readonly configService: ConfigService, private readonly nodeService: NodeService, private readonly cacheService: CacheService) {}
 
   onModuleInit(): void {

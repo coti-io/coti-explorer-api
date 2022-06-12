@@ -24,6 +24,7 @@ import { SocketEvents } from './mysql-live.service';
 export class NodeService {
   private readonly logger = new Logger('TaskService');
   private readonly nodeManagerUrl: string;
+
   constructor(private readonly configService: ConfigService, private httpService: HttpService, private appGateway: AppGateway) {
     this.nodeManagerUrl = this.configService.get('NODE_MANAGER_URL');
   }

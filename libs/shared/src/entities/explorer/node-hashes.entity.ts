@@ -1,7 +1,7 @@
 import { Column, Entity, JoinColumn, ManyToOne } from 'typeorm';
 import { BaseEntity } from '../base.entity';
 import { ExplorerAppEntitiesNames } from './entities.names';
-import { DbAppTransaction, NodeEntity } from '@app/shared/entities';
+import { NodeEntity } from '@app/shared/entities';
 
 @Entity(ExplorerAppEntitiesNames.nodeHashes)
 export class NodeHashEntity extends BaseEntity {

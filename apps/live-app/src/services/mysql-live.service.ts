@@ -1,16 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import LiveMysql from 'mysql-live-select';
-import {
-  DbAppTransaction,
-  exec,
-  getConfirmedTransactionsQuery,
-  getNewTransactionsQuery,
-  getTokensSymbols,
-  getTransactionsById,
-  getTransactionsCount,
-  TransactionDto,
-} from '@app/shared';
+import { DbAppTransaction, exec, getTokensSymbols, getTransactionsById, getTransactionsCount, TransactionDto } from '@app/shared';
 import { AppGateway } from '../gateway';
 
 const firstRunMap = {};
@@ -138,6 +129,7 @@ export class MysqlLiveService {
     }
     return Object.keys(addressToNotifyMap);
   }
+
   getTransactionsAddressesToNotify(transactions: DbAppTransaction[]): string[] {
     const addressToNotifyMap = {};
     for (const transaction of transactions) {
@@ -162,6 +154,7 @@ export class MysqlLiveService {
     }
     return Object.keys(addressToNotifyMap);
   }
+
   getTransactionCurrencyHashesToNotify(transaction: DbAppTransaction): string[] {
     const nativeCurrencyHash = this.configService.get<string>('COTI_CURRENCY_HASH');
     const tokenTransactionsToNotifyMap = {

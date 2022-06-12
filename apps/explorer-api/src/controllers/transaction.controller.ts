@@ -6,7 +6,8 @@ import {
   GetAddressTransactionsDto,
   GetNodeTransactionsDto,
   GetTokenTransactionsDto,
-  GetTransactionByHashRequestDto, NodeTransactionsResponseDto,
+  GetTransactionByHashRequestDto,
+  NodeTransactionsResponseDto,
   TransactionResponseDto,
   TransactionsResponseDto,
 } from '@app/shared';

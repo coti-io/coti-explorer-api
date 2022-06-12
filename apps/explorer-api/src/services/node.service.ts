@@ -1,13 +1,13 @@
 import { BadRequestException, Injectable, Logger } from '@nestjs/common';
 
 import {
-  ExplorerAppEntitiesNames,
+  CreateNodeInfoRequestDto,
   exec,
+  ExplorerAppEntitiesNames,
   NodeEntity,
+  NodeHashEntity,
   NodeInfoRequestDto,
   NodeInfoResponseDto,
-  CreateNodeInfoRequestDto,
-  NodeHashEntity,
   NodeUploadImageUrlResponseDto,
 } from '@app/shared';
 
@@ -20,6 +20,7 @@ import { ExtendedMulterFile } from '../interceptors';
 @Injectable()
 export class NodeService {
   private readonly logger = new Logger('NodeService');
+
   constructor(private readonly configService: ConfigService, private readonly fileUploadService: FileUploadService) {}
 
   async getInfo(request: NodeInfoRequestDto): Promise<NodeInfoResponseDto> {
@@ -45,6 +46,7 @@ export class NodeService {
       throw new ExplorerError(error);
     }
   }
+
   // end point for admin
   async getInfos(): Promise<NodeInfoResponseDto[]> {
     const explorerManager = getManager();
@@ -62,6 +64,7 @@ export class NodeService {
       throw new ExplorerError(error);
     }
   }
+
   // end point for admin
   async updateNodeExtraDetails(params: CreateNodeInfoRequestDto): Promise<NodeInfoResponseDto> {
     const explorerManager = getManager();
@@ -130,6 +133,7 @@ export class NodeService {
       throw new ExplorerError(error);
     }
   }
+
   // end point for admin
   async uploadIcon(file: ExtendedMulterFile): Promise<NodeUploadImageUrlResponseDto> {
     const { hash } = file;

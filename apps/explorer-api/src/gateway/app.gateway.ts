@@ -2,7 +2,7 @@ import { Logger } from '@nestjs/common';
 import { OnGatewayConnection, OnGatewayDisconnect, OnGatewayInit, SubscribeMessage, WebSocketGateway, WebSocketServer } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
 import { corsConfig } from '../configurations';
-import {SocketEvents} from "../../../live-app/src/services";
+import { SocketEvents } from '../../../live-app/src/services';
 
 @WebSocketGateway({ cors: { ...corsConfig } })
 export class AppGateway implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect {

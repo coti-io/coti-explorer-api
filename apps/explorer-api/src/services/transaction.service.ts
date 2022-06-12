@@ -3,29 +3,30 @@ import { Injectable, Logger } from '@nestjs/common';
 import { ExplorerBadRequestError, ExplorerError } from '../errors/explorer-error';
 import { getManager } from 'typeorm';
 import {
+  Addresses,
+  ConfirmationTimeEntity,
+  DbAppEntitiesNames,
+  DbAppTransaction,
+  exec,
+  ExplorerAppEntitiesNames,
+  getTokensSymbols,
+  getTransactionCount,
+  getTransactionsById,
+  NodeTransactionsResponseDto,
+  TransactionAddress,
+  TransactionConfirmationTimeResponseDto,
   TransactionDto,
   TransactionResponseDto,
   TransactionsResponseDto,
-  TransactionConfirmationTimeResponseDto,
-  Addresses,
-  DbAppTransaction,
-  getTransactionCount,
-  TransactionAddress,
-  exec,
-  getTransactionsById,
-  getTokensSymbols,
-  DbAppEntitiesNames,
-  ConfirmationTimeEntity,
-  ExplorerAppEntitiesNames,
-  TreasuryTotalsResponseDto,
   TreasuryTotalsEntity,
-  NodeTransactionsResponseDto,
+  TreasuryTotalsResponseDto,
 } from '@app/shared';
 import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class TransactionService {
   private readonly logger = new Logger('TransactionService');
+
   constructor(private readonly configService: ConfigService) {}
 
   async getTransactions(limit: number, offset: number): Promise<TransactionsResponseDto> {

@@ -1,14 +1,14 @@
 import { BadRequestException, Injectable, Logger } from '@nestjs/common';
 import {
-  TokenInfoRequestDto,
-  TokenInfoResponseDto,
+  CreateTokenInfoRequestDto,
   Currency,
   DbAppEntitiesNames,
+  exec,
   ExplorerAppEntitiesNames,
   TokenEntity,
-  exec,
+  TokenInfoRequestDto,
+  TokenInfoResponseDto,
   TokenUploadImageUrlResponseDto,
-  CreateTokenInfoRequestDto,
 } from '@app/shared';
 
 import { ExplorerBadRequestError, ExplorerError, ExplorerInternalServerError } from '../errors';
@@ -20,6 +20,7 @@ import { ExtendedMulterFile } from '../interceptors';
 @Injectable()
 export class TokenService {
   private readonly logger = new Logger('TokenService');
+
   constructor(private readonly configService: ConfigService, private readonly fileUploadService: FileUploadService) {}
 
   async getTokenInfo(request: TokenInfoRequestDto): Promise<TokenInfoResponseDto> {
@@ -66,6 +67,7 @@ export class TokenService {
       throw new ExplorerError(error);
     }
   }
+
   // end point for admin
   async getTokensInfo(): Promise<TokenInfoResponseDto[]> {
     const dbAppManager = getManager('db_app');
@@ -114,6 +116,7 @@ export class TokenService {
       throw new ExplorerError(error);
     }
   }
+
   // end point for admin
   async createTokenExtraDetails(params: CreateTokenInfoRequestDto): Promise<TokenInfoResponseDto> {
     const explorerManager = getManager();

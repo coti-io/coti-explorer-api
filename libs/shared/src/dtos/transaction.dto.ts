@@ -116,6 +116,7 @@ export class GetTokenTransactionsDto {
   @Min(0)
   offset = 0;
 }
+
 export class TransactionsResponseDto {
   transactionsData: TransactionDto[];
   totalTransactions: number;
@@ -172,6 +173,7 @@ export class BaseTransactionDto {
   name: BaseTransactionName;
   symbol: string;
   currencyHash: string;
+
   constructor(baseTransactionEntity: BaseTransactionEntity, createTime: string, currencySymbolMap: { [key: string]: string }) {
     this.hash = baseTransactionEntity.hash;
     this.addressHash = baseTransactionEntity.addressHash;
@@ -192,6 +194,7 @@ export class InputBaseTransactionDto extends BaseTransactionDto {
 export class FullnodeFeeBaseTransactionDto extends BaseTransactionDto {
   originalAmount: number;
   originalCurrencyHash: string;
+
   constructor(baseTransaction: FullnodeFeeBaseTransaction, currencySymbolMap: { [key: string]: string }) {
     super(baseTransaction, baseTransaction.fullnodeFeeCreateTime, currencySymbolMap);
     this.originalAmount = baseTransaction.originalAmount;
@@ -203,6 +206,7 @@ export class NetworkFeeBaseTransactionDto extends BaseTransactionDto {
   originalAmount: string;
   reducedAmount: string;
   originalCurrencyHash: string;
+
   constructor(baseTransaction: NetworkFeeBaseTransaction, currencySymbolMap: { [key: string]: string }) {
     super(baseTransaction, baseTransaction.networkFeeCreateTime, currencySymbolMap);
     this.reducedAmount = baseTransaction.reducedAmount;
@@ -215,6 +219,7 @@ export class ReceiverBaseTransactionDto extends BaseTransactionDto {
   originalAmount: string;
   receiverDescription: string;
   originalCurrencyHash: string;
+
   constructor(baseTransaction: ReceiverBaseTransaction, currencySymbolMap: { [key: string]: string }) {
     super(baseTransaction, baseTransaction.receiverCreateTime, currencySymbolMap);
     this.receiverDescription = baseTransaction.receiverDescription;
@@ -227,6 +232,7 @@ export class TokenMintingFeeBaseTransactionDto extends BaseTransactionDto {
   originalAmount: string;
   originalCurrencyHash: string;
   tokenMintingServiceData: TokenMintingServiceDataDto;
+
   constructor(baseTransaction: TokenMintingFeeBaseTransaction, currencySymbolMap: { [key: string]: string }) {
     super(baseTransaction, baseTransaction.tokenMintingFeeCreateTime, currencySymbolMap);
     this.originalAmount = baseTransaction.originalAmount;
@@ -271,6 +277,7 @@ export class TokenGenerationServiceDataDto {
   feeAmount: string;
   originatorCurrencyData: OriginatorCurrencyDataDto;
   currencyTypeData: CurrencyTypeDataDto;
+
   constructor(serviceData: TokenGenerationServiceData) {
     this.feeAmount = serviceData.feeAmount;
     this.originatorCurrencyData = new OriginatorCurrencyDataDto(serviceData.originatorCurrencyData);
