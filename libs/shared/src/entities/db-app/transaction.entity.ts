@@ -1,6 +1,6 @@
 import { TransactionType } from '../../dtos';
 import { exec } from '../../utils';
-import { Column, Entity, getManager, In, OneToMany } from 'typeorm';
+import { Column, Entity, getManager, In, Not, OneToMany } from 'typeorm';
 import { FullnodeFeeBaseTransaction, NetworkFeeBaseTransaction, ReceiverBaseTransaction } from '.';
 import { BaseEntity } from '../base.entity';
 import { DbAppEntitiesNames } from './entities.names';
@@ -105,6 +105,7 @@ export async function getTransactionsById(transactionIds: number[]): Promise<DbA
     .leftJoinAndSelect('tgsd.originatorCurrencyData', 'ocd')
     .leftJoinAndSelect('tgsd.currencyTypeData', 'ctd')
     .where({ id: In(transactionIds) })
+    .andWhere({ type: Not(TransactionType.ZEROSPEND) })
     .orderBy({ attachmentTime: 'DESC' });
   const [transactionsError, transactions] = await exec(query.getMany());
   if (transactionsError) {

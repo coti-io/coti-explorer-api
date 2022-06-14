@@ -1,7 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 
 import { ExplorerBadRequestError, ExplorerError } from '../errors/explorer-error';
-import { getManager } from 'typeorm';
+import { getManager, Not } from 'typeorm';
 import {
   Addresses,
   ConfirmationTimeEntity,
@@ -18,6 +18,7 @@ import {
   TransactionDto,
   TransactionResponseDto,
   TransactionsResponseDto,
+  TransactionType,
   TreasuryTotalsEntity,
   TreasuryTotalsResponseDto,
 } from '@app/shared';
@@ -36,6 +37,7 @@ export class TransactionService {
         .getRepository<DbAppTransaction>(DbAppEntitiesNames.transactions)
         .createQueryBuilder('t')
         .select('id')
+        .where({ type: Not(TransactionType.ZEROSPEND) })
         .orderBy({ attachmentTime: 'DESC' })
         .limit(limit)
         .offset(offset);
@@ -73,6 +75,7 @@ export class TransactionService {
         .getRepository<TransactionAddress>('transaction_addresses')
         .createQueryBuilder('t')
         .where('t.addressId = :addressId', { addressId })
+        .andWhere({ type: Not(TransactionType.ZEROSPEND) })
         .orderBy({ attachmentTime: 'DESC' })
         .limit(limit)
         .offset(offset);
@@ -153,6 +156,7 @@ export class TransactionService {
         .leftJoinAndSelect('tgsd.originatorCurrencyData', 'ocd')
         .leftJoinAndSelect('tgsd.currencyTypeData', 'ctd')
         .where('t.nodeHash=:nodeHash', { nodeHash })
+        .andWhere({ type: Not(TransactionType.ZEROSPEND) })
         .orderBy({ attachmentTime: 'DESC' })
         .limit(limit)
         .offset(offset);
@@ -181,6 +185,7 @@ export class TransactionService {
         .createQueryBuilder('t')
         .innerJoinAndSelect('t.receiverBaseTransactions', 'rbt', `rbt.currencyHash = :currencyHash`, { currencyHash })
         .select('t.id id')
+        .andWhere({ type: Not(TransactionType.ZEROSPEND) })
         .orderBy({ attachmentTime: 'DESC' })
         .limit(limit)
         .offset(offset);
