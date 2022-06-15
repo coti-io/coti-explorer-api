@@ -226,6 +226,7 @@ export class MysqlLiveService {
         msgPromises.push(this.gateway.sendMessageToRoom(transaction.nodeHash, `${SocketEvents.NodeTransactionsNotification}`, eventMessage));
         msgPromises.push(this.gateway.sendMessageToRoom(transaction.hash, `${SocketEvents.TransactionDetails}`, eventMessage));
         msgPromises.push(this.gateway.sendBroadcast(SocketEvents.GeneralTransactionsNotification, eventMessage));
+        this.logger.warn(`Sending broadcast message to room ${SocketEvents.GeneralTransactionsNotification}`);
       }
 
       await Promise.all(msgPromises);

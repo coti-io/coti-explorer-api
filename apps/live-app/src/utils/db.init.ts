@@ -14,7 +14,7 @@ export function explorerDbInit() {
       password: configService.get<string>('DB_PASSWORD'),
       database: configService.get<string>('DB_NAME'),
       entities: ExplorerEntities,
-      logging: true,
+      logging: false,
       connectTimeout: 60 * 60 * 1000,
       acquireTimeout: 60 * 60 * 1000,
       timeout: 60 * 60 * 1000,
