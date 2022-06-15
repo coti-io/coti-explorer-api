@@ -45,7 +45,7 @@ export class TransactionDto {
       ...transaction.tokenGenerationFeeBaseTransactions.map(x => new TokenGenerationFeeBaseTransactionDto(x, currencySymbolMap)),
     ];
     this.createTime = transaction.transactionCreateTime;
-    this.status = this.transactionConsensusUpdateTime ? TransactionStatus.CONFIRMED : TransactionStatus.ATTACHED_TO_DAG;
+    this.status = transaction.transactionConsensusUpdateTime ? TransactionStatus.CONFIRMED : TransactionStatus.ATTACHED_TO_DAG;
     delete transaction.id;
     delete transaction.inputBaseTransactions;
     delete transaction.receiverBaseTransactions;

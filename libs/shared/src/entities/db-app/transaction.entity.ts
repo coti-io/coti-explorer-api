@@ -87,6 +87,19 @@ export const getTransactionsQuery = (): string => {
     transactions as transactions
     WHERE 
     updateTime > DATE_ADD(NOW(), INTERVAL -10 MINUTE)
+    AND transactionConsensusUpdateTime IS NULL
+  `;
+};
+
+export const getConfirmedTransactionsQuery = (): string => {
+  return `
+    SELECT 
+    transactions.id
+    FROM
+    transactions as transactions
+    WHERE 
+    updateTime > DATE_ADD(NOW(), INTERVAL -10 MINUTE)
+    AND transactionConsensusUpdateTime IS NOT NULL
   `;
 };
 
