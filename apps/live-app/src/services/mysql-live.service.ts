@@ -1,16 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import LiveMysql from 'mysql-live-select';
-import {
-  DbAppTransaction,
-  exec,
-  getConfirmedTransactionsQuery,
-  getTokensSymbols,
-  getTransactionsById,
-  getTransactionsCount,
-  getTransactionsQuery,
-  TransactionDto,
-} from '@app/shared';
+import { DbAppTransaction, exec, getTokensSymbols, getTransactionsById, getTransactionsCount, getTransactionsQuery, TransactionDto } from '@app/shared';
 import { AppGateway } from '../gateway';
 
 const firstRunMap = {};
@@ -96,23 +87,6 @@ export class MysqlLiveService {
 
     this.liveConnection
       .select(getTransactionsQuery(), [
-        {
-          table: `transactions`,
-        },
-      ])
-      .on('update', async (diff: Diff) => {
-        const event = 'SocketEvents.NewTransactionCreated';
-        if (!firstRunMap[event]) {
-          firstRunMap[event] = true;
-          return;
-        }
-        if (diff.added && diff.added.length > 0) {
-          await this.eventHandler(diff.added);
-        }
-      });
-
-    this.liveConnection
-      .select(getConfirmedTransactionsQuery(), [
         {
           table: `transactions`,
         },
