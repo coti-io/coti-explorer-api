@@ -40,7 +40,7 @@ export function dbAppInit() {
       password: configService.get<string>('DB_APP_PASSWORD'),
       database: configService.get<string>('DB_APP_NAME'),
       entities: DbAppEntities,
-      logging: true,
+      logging: false,
       timezone: 'Z',
       connectTimeout: 60 * 60 * 1000,
       timeout: 60 * 60 * 1000,

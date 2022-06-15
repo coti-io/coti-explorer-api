@@ -16,9 +16,9 @@ export class SearchService {
         .getRepository<Currency>(DbAppEntitiesNames.currencies)
         .createQueryBuilder('c')
         .innerJoinAndSelect('c.originatorCurrencyData', 'ocd')
-        .where('ocd.name like :name', { name: `${searchString}%` })
-        .orWhere('ocd.symbol like :symbol', { symbol: `${searchString}%` })
-        .orWhere('c.hash like :hash', { hash: `${searchString}%` });
+        .where('ocd.name like :name', { name: `%${searchString}%` })
+        .orWhere('ocd.symbol like :symbol', { symbol: `%${searchString}%` })
+        .orWhere('c.hash like :hash', { hash: `%${searchString}%` });
 
       const [currenciesError, currencies] = await exec(currencyQuery.getMany());
       if (currenciesError) {
@@ -49,7 +49,7 @@ export class SearchService {
         throw nodesDatasError;
       }
 
-      return { nodes: nodes.map(n => new NodeSearchResult(n)), tokens: currencies.map(c => new TokenSearchResult(c, hashToTokenMap[c.hash])) };
+      return { nodes: nodes.map(n => new NodeSearchResult(n)).slice(0, 5), tokens: currencies.map(c => new TokenSearchResult(c, hashToTokenMap[c.hash])).slice(0, 5) };
     } catch (error) {
       this.logger.error(error);
       throw new ExplorerError({

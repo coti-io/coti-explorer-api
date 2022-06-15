@@ -14,7 +14,7 @@ export class SearchController {
 
   @Post()
   @HttpCode(200)
-  async getWalletCount(@Body() body: SearchRequestDto): Promise<SearchResponseDto> {
+  async getSearchResults(@Body() body: SearchRequestDto): Promise<SearchResponseDto> {
     return this.searchService.getSearchResults(body.criteria);
   }
 }
