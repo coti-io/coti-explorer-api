@@ -5,6 +5,8 @@ import { NodeEntity, TokenEntity } from '../entities/explorer';
 export class SearchResponseDto {
   tokens: TokenSearchResult[];
   nodes: NodeSearchResult[];
+  addresses: string[];
+  transactions: string[];
 }
 
 export class TokenSearchResult {

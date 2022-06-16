@@ -1,5 +1,17 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { Currency, DbAppEntitiesNames, exec, ExplorerAppEntitiesNames, NodeEntity, NodeSearchResult, SearchResponseDto, TokenEntity, TokenSearchResult } from '@app/shared';
+import {
+  Addresses,
+  Currency,
+  DbAppEntitiesNames,
+  DbAppTransaction,
+  exec,
+  ExplorerAppEntitiesNames,
+  NodeEntity,
+  NodeSearchResult,
+  SearchResponseDto,
+  TokenEntity,
+  TokenSearchResult,
+} from '@app/shared';
 
 import { ExplorerError } from '../errors';
 import { getManager, In } from 'typeorm';
@@ -12,6 +24,7 @@ export class SearchService {
     const dbAppManager = getManager('db_app');
     const explorerManager = getManager();
     try {
+      // Tokens
       const currencyQuery = dbAppManager
         .getRepository<Currency>(DbAppEntitiesNames.currencies)
         .createQueryBuilder('c')
@@ -40,6 +53,7 @@ export class SearchService {
         return acc;
       }, {});
 
+      // Nodes
       const nodeQuery = explorerManager
         .getRepository<NodeEntity>(ExplorerAppEntitiesNames.nodes)
         .createQueryBuilder('n')
@@ -49,7 +63,38 @@ export class SearchService {
         throw nodesDatasError;
       }
 
-      return { nodes: nodes.map(n => new NodeSearchResult(n)).slice(0, 5), tokens: currencies.map(c => new TokenSearchResult(c, hashToTokenMap[c.hash])).slice(0, 5) };
+      // Addresses
+      const addressQuery = dbAppManager
+        .getRepository<Addresses>(DbAppEntitiesNames.addresses)
+        .createQueryBuilder('a')
+        .where('a.addressHash like :addressHash', { addressHash: `${searchString}%` })
+        .limit(5);
+      const [addressesDataError, addressesData] = await exec(addressQuery.getMany());
+      if (addressesDataError) {
+        throw addressesDataError;
+      }
+
+      const addressesHashArray = addressesData.map(x => x.addressHash);
+
+      // Transactions
+      const transactionsQuery = dbAppManager
+        .getRepository<DbAppTransaction>(DbAppEntitiesNames.transactions)
+        .createQueryBuilder('t')
+        .where('t.hash like :hash', { hash: `${searchString}%` })
+        .limit(5);
+      const [transactionsDataError, transactionsData] = await exec(transactionsQuery.getMany());
+      if (transactionsDataError) {
+        throw transactionsDataError;
+      }
+
+      const transactionsHashArray = transactionsData.map(x => x.hash);
+
+      return {
+        nodes: nodes.map(n => new NodeSearchResult(n)).slice(0, 5),
+        tokens: currencies.map(c => new TokenSearchResult(c, hashToTokenMap[c.hash])).slice(0, 5),
+        addresses: addressesHashArray,
+        transactions: transactionsHashArray,
+      };
     } catch (error) {
       this.logger.error(error);
       throw new ExplorerError({
