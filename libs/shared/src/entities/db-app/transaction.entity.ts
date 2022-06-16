@@ -83,14 +83,11 @@ export const getTransactionsQuery = (): string => {
   return `
     SELECT 
     transactions.id,
-    transactions.transactionConsensusUpdateTime,
-    transactions.trustChainTrustScore,
-    transactions.senderTrustScore
+    transactions.updateTime
     FROM
     transactions as transactions
     WHERE 
     updateTime > DATE_ADD(NOW(), INTERVAL -10 MINUTE)
-    AND transactionConsensusUpdateTime IS NULL
   `;
 };
 

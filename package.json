@@ -28,6 +28,7 @@
   },
   "dependencies": {
     "@coti-io/coti-price-rate": "^1.1.1",
+    "@coti-io/crypto": "^1.11.0-beta.13",
     "@nestjs/axios": "^0.0.7",
     "@nestjs/common": "^8.2.4",
     "@nestjs/config": "^1.1.6",

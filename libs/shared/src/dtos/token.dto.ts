@@ -8,6 +8,12 @@ export class TokenInfoRequestDto {
   currencyHash: string;
 }
 
+export class TokenInfoBySymbolRequestDto {
+  @IsString()
+  @IsNotEmpty()
+  symbol: string;
+}
+
 export class CreateTokenInfoRequestDto {
   @IsString()
   @IsNotEmpty()

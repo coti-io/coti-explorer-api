@@ -1,5 +1,5 @@
 import { Body, Controller, HttpCode, Post, Put, UploadedFile, UseFilters, UseGuards, UseInterceptors } from '@nestjs/common';
-import { CreateTokenInfoRequestDto, TokenInfoRequestDto, TokenInfoResponseDto, TokenUploadImageUrlResponseDto } from '@app/shared';
+import { CreateTokenInfoRequestDto, TokenInfoBySymbolRequestDto, TokenInfoRequestDto, TokenInfoResponseDto, TokenUploadImageUrlResponseDto } from '@app/shared';
 import { ExplorerExceptionFilter } from '../filters';
 import { ExtendedMulterFile, FileExtender, ResponseInterceptor } from '../interceptors';
 import { TokenService } from '../services';
@@ -32,6 +32,12 @@ export class TokenController {
   @HttpCode(200)
   async getTokenInfo(@Body() body: TokenInfoRequestDto): Promise<TokenInfoResponseDto> {
     return this.tokenService.getTokenInfo(body);
+  }
+
+  @Post('symbol')
+  @HttpCode(200)
+  async getTokenInfoBySymbol(@Body() body: TokenInfoBySymbolRequestDto): Promise<TokenInfoResponseDto> {
+    return this.tokenService.getTokenInfoBySymbol(body);
   }
 
   @UseGuards(AdminApiKeyAuthGuard)

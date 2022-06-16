@@ -23,6 +23,7 @@ import {
   TreasuryTotalsResponseDto,
 } from '@app/shared';
 import { ConfigService } from '@nestjs/config';
+import { utils as CryptoUtils } from '@coti-io/crypto';
 
 @Injectable()
 export class TransactionService {
@@ -68,7 +69,7 @@ export class TransactionService {
         manager.getRepository<Addresses>('addresses').createQueryBuilder('a').where('a.addressHash = :address', { address }).getOneOrFail(),
       );
       if (dbAddressError) {
-        throw dbAddressError;
+        throw new ExplorerError({ message: `Could not find address ${address}` });
       }
       const addressId = dbAddress.id;
       const transactionAddressesQuery = manager
@@ -176,8 +177,9 @@ export class TransactionService {
 
   async getTransactionByCurrencyHash(limit: number, offset: number, currencyHash: string): Promise<TransactionsResponseDto> {
     const manager = getManager('db_app');
+    const cotiCurrencyHash = CryptoUtils.getCurrencyHashBySymbol('coti');
     try {
-      if (currencyHash === this.configService.get('COTI_CURRENCY_HASH')) {
+      if (currencyHash === cotiCurrencyHash) {
         throw new ExplorerBadRequestError(`Currency with currency hash ${currencyHash} is not supported`);
       }
       const queryTxIds = manager

@@ -3,6 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import LiveMysql from 'mysql-live-select';
 import { DbAppTransaction, exec, getTokensSymbols, getTransactionsById, getTransactionsCount, getTransactionsQuery, TransactionDto } from '@app/shared';
 import { AppGateway } from '../gateway';
+import { utils as CryptoUtils } from '@coti-io/crypto';
 
 const firstRunMap = {};
 
@@ -173,9 +174,9 @@ export class MysqlLiveService {
   }
 
   getTransactionCurrencyHashesToNotify(transaction: DbAppTransaction): string[] {
-    const nativeCurrencyHash = this.configService.get<string>('COTI_CURRENCY_HASH');
+    const cotiCurrencyHash = CryptoUtils.getCurrencyHashBySymbol('coti');
     const tokenTransactionsToNotifyMap = {
-      [nativeCurrencyHash]: 1,
+      [cotiCurrencyHash]: 1,
     };
     for (const bt of transaction.inputBaseTransactions) {
       if (bt.currencyHash) tokenTransactionsToNotifyMap[bt.currencyHash] = 1;

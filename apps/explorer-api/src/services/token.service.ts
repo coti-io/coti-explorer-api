@@ -6,6 +6,7 @@ import {
   exec,
   ExplorerAppEntitiesNames,
   TokenEntity,
+  TokenInfoBySymbolRequestDto,
   TokenInfoRequestDto,
   TokenInfoResponseDto,
   TokenUploadImageUrlResponseDto,
@@ -16,6 +17,7 @@ import { getManager, In } from 'typeorm';
 import { ConfigService } from '@nestjs/config';
 import { FileUploadService } from './file-upload.service';
 import { ExtendedMulterFile } from '../interceptors';
+import { utils as CryptoUtils } from '@coti-io/crypto';
 
 @Injectable()
 export class TokenService {
@@ -25,7 +27,8 @@ export class TokenService {
 
   async getTokenInfo(request: TokenInfoRequestDto): Promise<TokenInfoResponseDto> {
     const { currencyHash } = request;
-    if (currencyHash === this.configService.get('COTI_CURRENCY_HASH')) {
+    const cotiCurrencyHash = CryptoUtils.getCurrencyHashBySymbol('coti');
+    if (currencyHash === cotiCurrencyHash) {
       throw new ExplorerBadRequestError(`Currency with currency hash ${currencyHash} is not supported`);
     }
     const dbAppManager = getManager('db_app');
@@ -62,6 +65,21 @@ export class TokenService {
       }
 
       return new TokenInfoResponseDto(currency, token, circulatingSupplyQueryRes.circulatingSupply);
+    } catch (error) {
+      this.logger.error(error);
+      throw new ExplorerError(error);
+    }
+  }
+
+  async getTokenInfoBySymbol(request: TokenInfoBySymbolRequestDto): Promise<TokenInfoResponseDto> {
+    try {
+      const currencyHash = CryptoUtils.getCurrencyHashBySymbol(request.symbol);
+      const [tokenInfoError, tokenInfo] = await exec(this.getTokenInfo({ currencyHash }));
+      if (tokenInfoError) {
+        throw new ExplorerInternalServerError(tokenInfoError.message);
+      }
+
+      return tokenInfo;
     } catch (error) {
       this.logger.error(error);
       throw new ExplorerError(error);
