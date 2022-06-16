@@ -75,9 +75,9 @@ export class TransactionService {
       const transactionAddressesQuery = manager
         .getRepository<TransactionAddress>('transaction_addresses')
         .createQueryBuilder('t')
+        .leftJoinAndSelect('t.transaction', 'tx', `tx.type <> '${TransactionType.ZEROSPEND}'`)
         .where('t.addressId = :addressId', { addressId })
-        .andWhere({ type: Not(TransactionType.ZEROSPEND) })
-        .orderBy({ attachmentTime: 'DESC' })
+        .orderBy('t.attachmentTime', 'DESC')
         .limit(limit)
         .offset(offset);
 
