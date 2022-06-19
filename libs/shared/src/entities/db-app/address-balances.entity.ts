@@ -40,3 +40,15 @@ export async function getTransactionsCount(addressesHash: string[]): Promise<{ [
   }
   return map;
 }
+
+export async function getNativeBalance(addressHash: string): Promise<{ nativeBalance: string }> {
+  const [balanceError, balance] = await exec(
+    getManager('db_app').getRepository<AddressBalance>(DbAppEntitiesNames.addressBalances).createQueryBuilder('ab').where({ addressHash }).getOne(),
+  );
+
+  if (balanceError) {
+    throw balanceError;
+  }
+
+  return { nativeBalance: balance.amount };
+}

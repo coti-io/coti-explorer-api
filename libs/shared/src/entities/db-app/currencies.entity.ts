@@ -5,6 +5,7 @@ import { OriginatorCurrencyData } from './originator-currency-data.entity';
 import { DbAppEntitiesNames } from './entities.names';
 import { exec } from '@app/shared/utils';
 import { DbAppTransaction } from '@app/shared/entities';
+import { TokenBalances } from '@app/shared/dtos';
 
 @Entity(DbAppEntitiesNames.currencies)
 export class Currency extends BaseEntity {
@@ -38,6 +39,36 @@ export async function getTokensSymbols(transactions: DbAppTransaction[]): Promis
     tokenSymbolsMap[c.hash] = c.originatorCurrencyData.symbol;
   }
   return tokenSymbolsMap;
+}
+
+export async function getTokenBalances(address: string): Promise<TokenBalances> {
+  const query = getManager('db_app')
+    .getRepository<AddressBalance>(DbAppEntitiesNames.addressBalances)
+    .createQueryBuilder('ab')
+    .leftJoinAndSelect('ab.currency', 'c')
+    .leftJoinAndSelect('c.originatorCurrencyData', 'ocd') //, `ocd.symbol = :symbol`, { symbol: symbol })
+    .where({ addressHash: address })
+    .andWhere(`ocd.symbol <> 'coti'`);
+
+  const [tokenDataError, tokenData] = await exec(query.getMany());
+  if (tokenDataError) {
+    throw tokenDataError;
+  }
+
+  if (Object.keys(tokenData).length === 0) {
+    return;
+  }
+
+  const res: TokenBalances = {};
+
+  for (const token of tokenData) {
+    res[token.currency.hash] = {
+      symbol: token.currency.originatorCurrencyData.symbol,
+      balance: token.amount,
+    };
+  }
+
+  return res;
 }
 
 export function getTransactionsCurrencyHash(transactions: DbAppTransaction[]): string[] {

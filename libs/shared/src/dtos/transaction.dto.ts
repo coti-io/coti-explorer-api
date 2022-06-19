@@ -15,6 +15,8 @@ import {
 } from '../entities';
 import { BaseTransactionEntity } from './../entities/db-app/base-transaction.entity';
 
+export type TokenBalances = { [key: string]: { symbol: string; balance: string } };
+
 export class TransactionDto {
   hash: string;
   amount: string;
@@ -126,6 +128,20 @@ export class TransactionsResponseDto {
     this.totalTransactions = total;
     this.transactionsData = transactions.map((x: DbAppTransaction) => new TransactionDto(x, tokensSymbols));
     this.tokensSymbols = tokensSymbols;
+  }
+}
+
+export class AddressesTransactionsResponseDto {
+  nativeBalance: string;
+  tokensData: TokenBalances;
+  transactionsData: TransactionDto[];
+  totalTransactions: number;
+
+  constructor(total: number, transactions: DbAppTransaction[], tokensSymbols: { [key: string]: string }, tokens: TokenBalances, nativeBalance: string) {
+    this.totalTransactions = total;
+    this.transactionsData = transactions.map((x: DbAppTransaction) => new TransactionDto(x, tokensSymbols));
+    this.tokensData = tokens;
+    this.nativeBalance = nativeBalance;
   }
 }
 

@@ -4,11 +4,14 @@ import { ExplorerBadRequestError, ExplorerError } from '../errors/explorer-error
 import { getManager, Not } from 'typeorm';
 import {
   Addresses,
+  AddressesTransactionsResponseDto,
   ConfirmationTimeEntity,
   DbAppEntitiesNames,
   DbAppTransaction,
   exec,
   ExplorerAppEntitiesNames,
+  getNativeBalance,
+  getTokenBalances,
   getTokensSymbols,
   getTransactionCount,
   getTransactionsById,
@@ -62,7 +65,7 @@ export class TransactionService {
     }
   }
 
-  async getTransactionsByAddress(limit: number, offset: number, address: string): Promise<TransactionsResponseDto> {
+  async getTransactionsByAddress(limit: number, offset: number, address: string): Promise<AddressesTransactionsResponseDto> {
     const manager = getManager('db_app');
     try {
       const [dbAddressError, dbAddress] = await exec(
@@ -98,8 +101,10 @@ export class TransactionService {
         throw totalTransactionsError;
       }
       const currencySymbolMap = await getTokensSymbols(transactions);
+      const tokenBalance = await getTokenBalances(address);
+      const { nativeBalance } = await getNativeBalance(address);
 
-      return new TransactionsResponseDto(totalTransactions, transactions, currencySymbolMap);
+      return new AddressesTransactionsResponseDto(totalTransactions, transactions, currencySymbolMap, tokenBalance, nativeBalance);
     } catch (error) {
       this.logger.error(error);
       throw new ExplorerError(error);

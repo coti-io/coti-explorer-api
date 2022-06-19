@@ -3,6 +3,7 @@ import { ExplorerExceptionFilter } from '../filters';
 import { ResponseInterceptor } from '../interceptors';
 import { TransactionService } from '../services';
 import {
+  AddressesTransactionsResponseDto,
   GetAddressTransactionsDto,
   GetNodeTransactionsDto,
   GetTokenTransactionsDto,
@@ -34,7 +35,7 @@ export class TransactionController {
 
   @Post('address')
   @HttpCode(200)
-  async getAddressTransactions(@Body() body: GetAddressTransactionsDto): Promise<TransactionsResponseDto> {
+  async getAddressTransactions(@Body() body: GetAddressTransactionsDto): Promise<AddressesTransactionsResponseDto> {
     return this.transactionService.getTransactionsByAddress(body.limit, body.offset, body.address);
   }
 
