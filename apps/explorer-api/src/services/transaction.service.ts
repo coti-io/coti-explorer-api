@@ -38,6 +38,7 @@ export class TransactionService {
   async getTransactions(body: TransactionRequestDto): Promise<TransactionsResponseDto> {
     const manager = getManager('db_app');
     const { limit, offset } = body;
+    let transactionsIdFinal;
     try {
       const idsQuery = manager
         .getRepository<DbAppTransaction>(DbAppEntitiesNames.transactions)
@@ -54,7 +55,26 @@ export class TransactionService {
         throw transactionsIdsError;
       }
 
-      const ids = transactionsIds.map(t => t.id);
+      if ((transactionsIds.length < limit || 50) && (!offset || offset === 0)) {
+        const idsQuery = manager
+          .getRepository<DbAppTransaction>(DbAppEntitiesNames.transactions)
+          .createQueryBuilder('t')
+          .select('id')
+          .where({ type: Not(TransactionType.ZEROSPEND) })
+          .orderBy({ attachmentTime: 'DESC' })
+          .limit(limit)
+          .offset(offset);
+        const [transactionsIdsDefaultError, transactionsIdsDefault] = await exec(idsQuery.getRawMany<{ id: number }>());
+
+        if (transactionsIdsDefaultError) {
+          throw transactionsIdsDefaultError;
+        }
+        transactionsIdFinal = transactionsIdsDefault;
+      } else {
+        transactionsIdFinal = transactionsIds;
+      }
+
+      const ids = transactionsIdFinal.map(t => t.id);
       const [transactionsError, transactions] = await exec(getTransactionsById(ids));
 
       if (transactionsError) {
