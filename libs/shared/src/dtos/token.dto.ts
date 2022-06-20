@@ -79,6 +79,6 @@ export class TokenInfoResponseDto {
     this.medium = token?.medium;
     this.circulatingSupply = circulatingSupply;
     this.trustChainSupply = circulatingSupply;
-    this.createTime = token?.createTime.toString();
+    this.createTime = currency?.createTime.toString();
   }
 }
