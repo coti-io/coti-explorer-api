@@ -11,10 +11,11 @@ import {
   SearchResponseDto,
   TokenEntity,
   TokenSearchResult,
+  TransactionType,
 } from '@app/shared';
 
 import { ExplorerError } from '../errors';
-import { getManager, In } from 'typeorm';
+import { getManager, In, Not } from 'typeorm';
 
 @Injectable()
 export class SearchService {
@@ -81,6 +82,7 @@ export class SearchService {
         .getRepository<DbAppTransaction>(DbAppEntitiesNames.transactions)
         .createQueryBuilder('t')
         .where('t.hash like :hash', { hash: `${searchString}%` })
+        .andWhere({ type: Not(TransactionType.ZEROSPEND) })
         .limit(5);
       const [transactionsDataError, transactionsData] = await exec(transactionsQuery.getMany());
       if (transactionsDataError) {
