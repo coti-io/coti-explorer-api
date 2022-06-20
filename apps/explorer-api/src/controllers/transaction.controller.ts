@@ -9,6 +9,7 @@ import {
   GetTokenTransactionsDto,
   GetTransactionByHashRequestDto,
   NodeTransactionsResponseDto,
+  TransactionRequestDto,
   TransactionResponseDto,
   TransactionsResponseDto,
 } from '@app/shared';
@@ -21,10 +22,10 @@ import { ApiTags } from '@nestjs/swagger';
 export class TransactionController {
   constructor(private readonly transactionService: TransactionService) {}
 
-  @Get('last-transactions')
+  @Post('last-transactions')
   @HttpCode(200)
-  async getTransactions(): Promise<TransactionsResponseDto> {
-    return this.transactionService.getTransactions(20, 0);
+  async getTransactions(@Body() body: TransactionRequestDto): Promise<TransactionsResponseDto> {
+    return this.transactionService.getTransactions(body);
   }
 
   @Post()

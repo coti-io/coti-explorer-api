@@ -62,6 +62,19 @@ export class TransactionDto {
   }
 }
 
+export class TransactionRequestDto {
+  @Optional()
+  @IsNumber()
+  @Max(50)
+  @Min(0)
+  limit = 50;
+
+  @Optional()
+  @IsNumber()
+  @Min(0)
+  offset = 0;
+}
+
 export class GetTransactionByHashRequestDto {
   @IsString()
   @IsNotEmpty()

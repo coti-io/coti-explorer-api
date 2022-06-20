@@ -19,6 +19,7 @@ import {
   TransactionAddress,
   TransactionConfirmationTimeResponseDto,
   TransactionDto,
+  TransactionRequestDto,
   TransactionResponseDto,
   TransactionsResponseDto,
   TransactionType,
@@ -34,14 +35,16 @@ export class TransactionService {
 
   constructor(private readonly configService: ConfigService) {}
 
-  async getTransactions(limit: number, offset: number): Promise<TransactionsResponseDto> {
+  async getTransactions(body: TransactionRequestDto): Promise<TransactionsResponseDto> {
     const manager = getManager('db_app');
+    const { limit, offset } = body;
     try {
       const idsQuery = manager
         .getRepository<DbAppTransaction>(DbAppEntitiesNames.transactions)
         .createQueryBuilder('t')
         .select('id')
         .where({ type: Not(TransactionType.ZEROSPEND) })
+        .andWhere('t.createTime >= now() - INTERVAL 1 DAY')
         .orderBy({ attachmentTime: 'DESC' })
         .limit(limit)
         .offset(offset);

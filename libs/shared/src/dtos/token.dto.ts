@@ -59,6 +59,7 @@ export class TokenInfoResponseDto {
   gitbook: string;
   medium: string;
   circulatingSupply: number;
+  trustChainSupply: number;
   holders: number;
 
   constructor(currency: Currency, token: TokenEntity, circulatingSupply: number) {
@@ -76,5 +77,6 @@ export class TokenInfoResponseDto {
     this.gitbook = token?.gitbook;
     this.medium = token?.medium;
     this.circulatingSupply = circulatingSupply;
+    this.trustChainSupply = circulatingSupply;
   }
 }
