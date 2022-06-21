@@ -8,6 +8,7 @@ export enum DbAppEntitiesNames {
   networkFeeBaseTransactions = 'network_fee_base_transactions',
   receiverBaseTransactions = 'receiver_base_transactions',
   transactionsAddresses = 'transaction_addresses',
+  transactionsCurrencies = 'transaction_currencies',
   transactions = 'transactions',
   tokenMintingFeeBaseTransactions = 'token_minting_fee_base_transactions',
   tokenGenerationFeeBaseTransactions = 'token_generation_fee_base_transactions',

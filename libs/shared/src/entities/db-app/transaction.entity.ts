@@ -7,6 +7,7 @@ import { DbAppEntitiesNames } from './entities.names';
 import { InputBaseTransaction } from './input-base-transaction.entity';
 import { TokenMintingFeeBaseTransaction } from '@app/shared/entities/db-app/token-minting-fee-base-transaction.entity';
 import { TokenGenerationFeeBaseTransaction } from '@app/shared/entities/db-app/token-generation-fee-base-transaction.entity';
+import { TransactionCurrency } from '@app/shared/entities/db-app/transaction-currencies';
 
 @Entity(DbAppEntitiesNames.transactions)
 export class DbAppTransaction extends BaseEntity {
@@ -60,6 +61,9 @@ export class DbAppTransaction extends BaseEntity {
 
   @OneToMany(() => TransactionAddress, transactionAddresses => transactionAddresses.transaction)
   transactionAddresses: TransactionAddress;
+
+  @OneToMany(() => TransactionCurrency, transactionCurrencies => transactionCurrencies.transaction)
+  transactionCurrencies: TransactionCurrency;
 
   @OneToMany(() => ReceiverBaseTransaction, receiverBaseTransactions => receiverBaseTransactions.baseTransaction)
   receiverBaseTransactions: ReceiverBaseTransaction[];

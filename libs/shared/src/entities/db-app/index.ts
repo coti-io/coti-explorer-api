@@ -14,6 +14,7 @@ import { OriginatorCurrencyData } from './originator-currency-data.entity';
 import { CurrencyTypeData } from './currency-type-data.entity';
 import { TokenGenerationServiceData } from './token-generation-service-data.entity';
 import { TokenMintingServiceData } from './token-minting-service-data.entity';
+import { TransactionCurrency } from '@app/shared/entities/db-app/transaction-currencies';
 
 export * from './receiver-base-transaction.entity';
 export * from './input-base-transaction.entity';
@@ -32,6 +33,7 @@ export * from './token-minting-service-data.entity';
 export * from './originator-currency-data.entity';
 export * from './currency-type-data.entity';
 export * from './entities.names';
+export * from './transaction-currencies';
 
 export const DbAppEntities = [
   ReceiverBaseTransaction,
@@ -50,4 +52,5 @@ export const DbAppEntities = [
   Addresses,
   OriginatorCurrencyData,
   CurrencyTypeData,
+  TransactionCurrency,
 ];

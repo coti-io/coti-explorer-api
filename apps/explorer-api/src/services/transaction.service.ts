@@ -6,6 +6,7 @@ import {
   Addresses,
   AddressesTransactionsResponseDto,
   ConfirmationTimeEntity,
+  Currency,
   DbAppEntitiesNames,
   DbAppTransaction,
   exec,
@@ -14,10 +15,12 @@ import {
   getTokenBalances,
   getTokensSymbols,
   getTransactionCount,
+  getTransactionCurrenciesCount,
   getTransactionsById,
   NodeTransactionsResponseDto,
   TransactionAddress,
   TransactionConfirmationTimeResponseDto,
+  TransactionCurrency,
   TransactionDto,
   TransactionRequestDto,
   TransactionResponseDto,
@@ -101,7 +104,6 @@ export class TransactionService {
       const transactionAddressesQuery = manager
         .getRepository<TransactionAddress>('transaction_addresses')
         .createQueryBuilder('t')
-        .leftJoinAndSelect('t.transaction', 'tx', `tx.type <> '${TransactionType.ZEROSPEND}'`)
         .where('t.addressId = :addressId', { addressId })
         .orderBy('t.attachmentTime', 'DESC')
         .limit(limit)
@@ -210,41 +212,40 @@ export class TransactionService {
       if (currencyHash === cotiCurrencyHash) {
         throw new ExplorerBadRequestError(`Currency with currency hash ${currencyHash} is not supported`);
       }
-      const queryTxIds = manager
-        .getRepository<DbAppTransaction>('transactions')
+      const [dbCurrencyError, dbCurrency] = await exec(
+        manager.getRepository<Currency>(DbAppEntitiesNames.currencies).createQueryBuilder('c').where('c.hash = :currencyHash', { currencyHash }).getOneOrFail(),
+      );
+      if (dbCurrencyError) {
+        throw new ExplorerError({ message: `Could not find currency with currency hash ${currencyHash}` });
+      }
+      const currencyId = dbCurrency.id;
+      const transactionCurrenciesQuery = manager
+        .getRepository<TransactionCurrency>(DbAppEntitiesNames.transactionsCurrencies)
         .createQueryBuilder('t')
-        .innerJoinAndSelect('t.receiverBaseTransactions', 'rbt', `rbt.currencyHash = :currencyHash`, { currencyHash })
-        .select('t.id id')
-        .andWhere({ type: Not(TransactionType.ZEROSPEND) })
-        .orderBy({ attachmentTime: 'DESC' })
+        .where('t.currencyId = :currencyId', { currencyId })
+        .orderBy('t.attachmentTime', 'DESC')
         .limit(limit)
         .offset(offset);
-      const [transactionsIdsError, transactionsIds] = await exec(queryTxIds.getRawMany<{ id: number }>());
 
-      if (transactionsIdsError) {
-        throw transactionsIdsError;
+      const [transactionsCurrenciesError, transactionsCurrencies] = await exec(transactionCurrenciesQuery.getMany());
+
+      if (transactionsCurrenciesError) {
+        throw transactionsCurrenciesError;
       }
-
-      const ids = transactionsIds.map(tx => tx.id);
-      const [transactionsError, transactions] = await exec(getTransactionsById(ids));
+      const transactionIds = transactionsCurrencies.map(ta => ta.transactionId);
+      const [transactionsError, transactions] = await exec(getTransactionsById(transactionIds));
 
       if (transactionsError) {
         throw transactionsError;
       }
 
-      const countQuery = manager
-        .getRepository<DbAppTransaction>('transactions')
-        .createQueryBuilder('t')
-        .select('COUNT(DISTINCT t.id) as count')
-        .innerJoin('t.receiverBaseTransactions', 'rbt', `rbt.currencyHash = :currencyHash`, { currencyHash });
-
-      const [countError, countResponse] = await exec(countQuery.getRawOne<{ count: number }>());
+      const [countError, countResponse] = await exec(getTransactionCurrenciesCount(currencyId));
 
       if (countError) {
         throw countError;
       }
       const currencySymbolMap = await getTokensSymbols(transactions);
-      return new TransactionsResponseDto(countResponse.count, transactions, currencySymbolMap);
+      return new TransactionsResponseDto(countResponse, transactions, currencySymbolMap);
     } catch (error) {
       this.logger.error(error);
       throw new ExplorerError(error);

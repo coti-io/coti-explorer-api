@@ -4,6 +4,8 @@ import { AddressTransactionCount } from './address-transaction-counts.entity';
 import { BaseEntity } from '../base.entity';
 import { Currency } from './currencies.entity';
 import { DbAppEntitiesNames } from './entities.names';
+import { DbAppTransaction, TransactionCurrency } from '@app/shared/entities';
+import { WalletCountResponseDto } from '@app/shared/dtos';
 
 @Entity(DbAppEntitiesNames.addressBalances)
 export class AddressBalance extends BaseEntity {
@@ -23,6 +25,19 @@ export class AddressBalance extends BaseEntity {
 
 export async function getTransactionCount(addressHash: string): Promise<number> {
   const [txCountError, txCount] = await exec(getManager('db_app').getRepository<AddressTransactionCount>('address_transaction_counts').findOne({ addressHash }));
+  if (txCountError) throw txCountError;
+  return txCount ? txCount.count : 0;
+}
+
+export async function getTransactionCurrenciesCount(currencyId: number): Promise<number> {
+  const [txCountError, txCount] = await exec(
+    getManager('db_app')
+      .getRepository<TransactionCurrency>(DbAppEntitiesNames.transactionsCurrencies)
+      .createQueryBuilder('tc')
+      .select('COUNT(DISTINCT tc.transactionId) as count')
+      .where({ currencyId })
+      .getRawOne<{ count: number }>(),
+  );
   if (txCountError) throw txCountError;
   return txCount ? txCount.count : 0;
 }
