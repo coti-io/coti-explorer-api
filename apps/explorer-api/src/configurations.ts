@@ -10,7 +10,7 @@ export const corsConfig = {
     'https://foxnet-explorer.coti.io',
     'https://foxnet-wallet.coti.io',
   ],
-  credentials: true,
+  credentials: false,
 };
 
 export const appModuleConfig = {
