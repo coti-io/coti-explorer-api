@@ -61,9 +61,9 @@ export class CacheService {
         .createQueryBuilder('t')
         .select(
           `
-      AVG(t.transactionConsensusUpdateTime - t.attachmentTime)/1000 avg, 
-      MIN(t.transactionConsensusUpdateTime - t.attachmentTime)/1000 min,
-      MAX(t.transactionConsensusUpdateTime - t.attachmentTime)/1000 max`,
+      AVG(t.transactionConsensusUpdateTime - t.attachmentTime) avg, 
+      MIN(t.transactionConsensusUpdateTime - t.attachmentTime) min,
+      MAX(t.transactionConsensusUpdateTime - t.attachmentTime) max`,
         )
         .where(`t.type <> 'ZeroSpend' AND t.transactionConsensusUpdateTime IS NOT NULL AND t.updateTime > DATE_ADD(NOW(), INTERVAL -24 HOUR)`);
       const [confirmationStatisticError, confirmationStatistic] = await exec(query.getRawOne<TransactionConfirmationTimeResponseDto>());
