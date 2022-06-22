@@ -35,7 +35,7 @@ export class SearchService {
       const successResults = results.filter(promise => promise.status === 'fulfilled') as PromiseFulfilledResult<any>[];
 
       if (successResults.length != results.length) {
-        throw new Error('error');
+        throw results.find(pVal => pVal.status === 'rejected');
       }
 
       return {

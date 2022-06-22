@@ -195,6 +195,7 @@ export class MysqlLiveService {
     }
     for (const bt of transaction.tokenMintingFeeBaseTransactions) {
       if (bt.currencyHash) tokenTransactionsToNotifyMap[bt.currencyHash] = 1;
+      tokenTransactionsToNotifyMap[bt.tokenMintingServiceData.mintingCurrencyHash] = 1;
     }
 
     return Object.keys(tokenTransactionsToNotifyMap);

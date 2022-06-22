@@ -92,6 +92,7 @@ export class TransactionService {
   }
 
   async getTransactionsByAddress(limit: number, offset: number, address: string): Promise<AddressesTransactionsResponseDto> {
+    const promisesArr = [];
     const manager = getManager('db_app');
     try {
       const [dbAddressError, dbAddress] = await exec(
@@ -125,11 +126,19 @@ export class TransactionService {
       if (totalTransactionsError) {
         throw totalTransactionsError;
       }
-      const currencySymbolMap = await getTokensSymbols(transactions);
-      const tokenBalance = await getTokenBalances(address);
-      const { nativeBalance } = await getNativeBalance(address);
 
-      return new AddressesTransactionsResponseDto(totalTransactions, transactions, currencySymbolMap, tokenBalance, nativeBalance);
+      promisesArr.push(getTokensSymbols(transactions));
+      promisesArr.push(getTokenBalances(address));
+      promisesArr.push(getNativeBalance(address));
+
+      const results: PromiseSettledResult<PromiseFulfilledResult<any> | PromiseRejectedResult>[] = await Promise.allSettled(promisesArr);
+      const successResults = results.filter(promise => promise.status === 'fulfilled') as PromiseFulfilledResult<any>[];
+
+      if (successResults.length != results.length) {
+        throw results.find(pVal => pVal.status === 'rejected');
+      }
+
+      return new AddressesTransactionsResponseDto(totalTransactions, transactions, successResults[0].value, successResults[1].value, successResults[2].value);
     } catch (error) {
       this.logger.error(error);
       throw new ExplorerError(error);
@@ -207,6 +216,7 @@ export class TransactionService {
 
   async getTransactionByCurrencyHash(limit: number, offset: number, currencyHash: string): Promise<TransactionsResponseDto> {
     const manager = getManager('db_app');
+    const promiseArr = [];
     const cotiCurrencyHash = CryptoUtils.getCurrencyHashBySymbol('coti');
     try {
       if (currencyHash === cotiCurrencyHash) {
@@ -239,13 +249,16 @@ export class TransactionService {
         throw transactionsError;
       }
 
-      const [countError, countResponse] = await exec(getTransactionCurrenciesCount(currencyId));
+      promiseArr.push(getTransactionCurrenciesCount(currencyId));
+      promiseArr.push(getTokensSymbols(transactions));
+      const results: PromiseSettledResult<PromiseFulfilledResult<any> | PromiseRejectedResult>[] = await Promise.allSettled(promiseArr);
+      const successResults = results.filter(promise => promise.status === 'fulfilled') as PromiseFulfilledResult<any>[];
 
-      if (countError) {
-        throw countError;
+      if (successResults.length != results.length) {
+        throw results.find(pVal => pVal.status === 'rejected');
       }
-      const currencySymbolMap = await getTokensSymbols(transactions);
-      return new TransactionsResponseDto(countResponse, transactions, currencySymbolMap);
+
+      return new TransactionsResponseDto(successResults[0].value, transactions, successResults[1].value);
     } catch (error) {
       this.logger.error(error);
       throw new ExplorerError(error);
