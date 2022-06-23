@@ -57,6 +57,9 @@ export class SearchService {
       .getRepository<Currency>(DbAppEntitiesNames.currencies)
       .createQueryBuilder('c')
       .innerJoinAndSelect('c.originatorCurrencyData', 'ocd')
+      .innerJoinAndSelect('ocd.tokenGenerationServiceData', 'tgsd')
+      .innerJoinAndSelect('tgsd.tokenGenerationBaseTransaction', 'tgbt')
+      .innerJoinAndSelect('tgbt.baseTransaction', 'bt', 'bt.transactionConsensusUpdateTime IS NOT NULL')
       .where('ocd.name like :name', { name: `%${searchString}%` })
       .orWhere('ocd.symbol like :symbol', { symbol: `%${searchString}%` })
       .orWhere('c.hash like :hash', { hash: `${searchString}%` });
