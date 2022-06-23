@@ -64,3 +64,12 @@ export class TokenController {
     return this.tokenService.uploadIcon(file);
   }
 }
+
+// receive error 500 with status 400
+// If token info does not exist return relevant error
+// put in the correct folder in the s3 bucket
+// update network key at the env of foxnet
+// Check 2 new socket events transactionConfirmationUpdate, numberOfActiveAddresses
+// Fix transaction count for shai
+// adressTranscation return only transfer
+// new event for count token transaction

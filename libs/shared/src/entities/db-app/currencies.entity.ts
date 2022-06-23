@@ -41,6 +41,19 @@ export async function getTokensSymbols(transactions: DbAppTransaction[]): Promis
   return tokenSymbolsMap;
 }
 
+export async function getCurrencyIdsByCurrencyHashes(currencyHashes: string[]): Promise<Currency[]> {
+  const query = getManager('db_app')
+    .getRepository<Currency>(DbAppEntitiesNames.currencies)
+    .createQueryBuilder('c')
+    .where({ hash: In(currencyHashes) });
+  const [currenciesError, currencies] = await exec(query.getMany());
+  if (currenciesError) {
+    throw currenciesError;
+  }
+
+  return currencies;
+}
+
 export async function getTokenBalances(address: string): Promise<TokenBalances> {
   const query = getManager('db_app')
     .getRepository<AddressBalance>(DbAppEntitiesNames.addressBalances)

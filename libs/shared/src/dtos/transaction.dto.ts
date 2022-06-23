@@ -424,3 +424,9 @@ export type BaseTransactionEvent = {
   amount?: number;
   addressHash?: string;
 };
+
+export type TransactionConfirmationEventDto = {
+  average: number;
+  minimum: number;
+  maximum: number;
+};

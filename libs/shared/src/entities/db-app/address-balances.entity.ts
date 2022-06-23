@@ -29,6 +29,18 @@ export async function getTransactionCount(addressHash: string): Promise<number> 
   return txCount ? txCount.count : 0;
 }
 
+export async function getActiveWalletsCount(): Promise<number> {
+  const [walletCountError, walletCount] = await exec(
+    getManager('db_app')
+      .getRepository<AddressBalance>(DbAppEntitiesNames.addressBalances)
+      .createQueryBuilder('ab')
+      .select('COUNT(DISTINCT ab.addressHash) as count')
+      .getRawOne<{ count: number }>(),
+  );
+  if (walletCountError) throw walletCountError;
+  return walletCount ? walletCount.count : 0;
+}
+
 export async function getTransactionCurrenciesCount(currencyId: number): Promise<number> {
   const [txCountError, txCount] = await exec(
     getManager('db_app')
@@ -67,3 +79,14 @@ export async function getNativeBalance(addressHash: string): Promise<{ nativeBal
 
   return { nativeBalance: balance.amount };
 }
+
+export const getCountActiveAddresses = (): string => {
+  return `
+    SELECT 
+    *
+    FROM
+    address_balances as ab
+    WHERE 
+    updateTime > DATE_ADD(NOW(), INTERVAL -10 MINUTE)
+  `;
+};

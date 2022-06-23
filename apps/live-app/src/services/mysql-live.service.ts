@@ -1,9 +1,24 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import LiveMysql from 'mysql-live-select';
-import { DbAppTransaction, exec, getTokensSymbols, getTransactionsById, getTransactionsCount, getTransactionsQuery, TransactionDto } from '@app/shared';
+import {
+  DbAppTransaction,
+  exec,
+  getActiveWalletsCount,
+  getConfirmationTime,
+  getConfirmationTimeUpdate,
+  getCountActiveAddresses,
+  getCurrencyHashCountByCurrencyId,
+  getCurrencyIdsByCurrencyHashes,
+  getTokensSymbols,
+  getTransactionsById,
+  getTransactionsCount,
+  getTransactionsQuery,
+  TransactionDto,
+} from '@app/shared';
 import { AppGateway } from '../gateway';
 import { utils as CryptoUtils } from '@coti-io/crypto';
+import { number } from 'joi';
 
 const firstRunMap = {};
 
@@ -16,7 +31,10 @@ export enum SocketEvents {
   TransactionDetails = 'transactionDetails',
   NodeUpdates = 'nodeUpdates',
   TransactionConfirmationUpdate = 'transactionConfirmationUpdate',
+  NumberOfActiveAddresses = 'numberOfActiveAddresses',
   TreasuryTotalsUpdates = 'treasuryTotalsUpdates',
+  Transactions = 'transactions',
+  TokenTransactionsTotal = 'tokenTransactionsTotal',
 }
 
 type MonitoredTx = {
@@ -93,13 +111,30 @@ export class MysqlLiveService {
         },
       ])
       .on('update', async (diff: Diff) => {
-        const event = 'SocketEvents.NewTransactionCreated';
+        const event = SocketEvents.TransactionConfirmationUpdate;
         if (!firstRunMap[event]) {
           firstRunMap[event] = true;
           return;
         }
         if (diff.added && diff.added.length > 0) {
-          await this.eventHandler(diff.added);
+          await this.eventHandler(diff.added, event);
+        }
+      });
+
+    this.liveConnection
+      .select(getCountActiveAddresses(), [
+        {
+          table: `address_balances`,
+        },
+      ])
+      .on('update', async (diff: Diff) => {
+        const event = SocketEvents.NumberOfActiveAddresses;
+        if (!firstRunMap[event]) {
+          firstRunMap[event] = true;
+          return;
+        }
+        if (diff.added && diff.added.length > 0) {
+          await this.eventHandler(diff.added, event);
         }
       });
   }
@@ -144,6 +179,7 @@ export class MysqlLiveService {
     }
     for (const bt of transaction.tokenMintingFeeBaseTransactions) {
       addressToNotifyMap[bt.addressHash] = 1;
+      addressToNotifyMap[bt.tokenMintingServiceData.receiverAddress] = 1;
     }
     return Object.keys(addressToNotifyMap);
   }
@@ -168,52 +204,68 @@ export class MysqlLiveService {
       }
       for (const bt of transaction.tokenMintingFeeBaseTransactions) {
         addressToNotifyMap[bt.addressHash] = 1;
+        addressToNotifyMap[bt.tokenMintingServiceData.receiverAddress] = 1;
       }
     }
     return Object.keys(addressToNotifyMap);
   }
 
-  getTransactionCurrencyHashesToNotify(transaction: DbAppTransaction): string[] {
+  getTransactionsCurrencyHashesToNotify(transactions: DbAppTransaction[]): string[] {
     const cotiCurrencyHash = CryptoUtils.getCurrencyHashBySymbol('coti');
     const tokenTransactionsToNotifyMap = {
       [cotiCurrencyHash]: 1,
     };
-    for (const bt of transaction.inputBaseTransactions) {
-      if (bt.currencyHash) tokenTransactionsToNotifyMap[bt.currencyHash] = 1;
-    }
-    for (const bt of transaction.receiverBaseTransactions) {
-      if (bt.currencyHash) tokenTransactionsToNotifyMap[bt.currencyHash] = 1;
-    }
-    for (const bt of transaction.fullnodeFeeBaseTransactions) {
-      if (bt.currencyHash) tokenTransactionsToNotifyMap[bt.currencyHash] = 1;
-    }
-    for (const bt of transaction.networkFeeBaseTransactions) {
-      if (bt.currencyHash) tokenTransactionsToNotifyMap[bt.currencyHash] = 1;
-    }
-    for (const bt of transaction.tokenGenerationFeeBaseTransactions) {
-      if (bt.currencyHash) tokenTransactionsToNotifyMap[bt.currencyHash] = 1;
-    }
-    for (const bt of transaction.tokenMintingFeeBaseTransactions) {
-      if (bt.currencyHash) tokenTransactionsToNotifyMap[bt.currencyHash] = 1;
-      tokenTransactionsToNotifyMap[bt.tokenMintingServiceData.mintingCurrencyHash] = 1;
+    for (const transaction of transactions) {
+      for (const bt of transaction.inputBaseTransactions) {
+        if (bt.currencyHash) tokenTransactionsToNotifyMap[bt.currencyHash] = 1;
+      }
+      for (const bt of transaction.receiverBaseTransactions) {
+        if (bt.currencyHash) tokenTransactionsToNotifyMap[bt.currencyHash] = 1;
+      }
+      for (const bt of transaction.fullnodeFeeBaseTransactions) {
+        if (bt.currencyHash) tokenTransactionsToNotifyMap[bt.currencyHash] = 1;
+      }
+      for (const bt of transaction.networkFeeBaseTransactions) {
+        if (bt.currencyHash) tokenTransactionsToNotifyMap[bt.currencyHash] = 1;
+      }
+      for (const bt of transaction.tokenGenerationFeeBaseTransactions) {
+        if (bt.currencyHash) tokenTransactionsToNotifyMap[bt.currencyHash] = 1;
+      }
+      for (const bt of transaction.tokenMintingFeeBaseTransactions) {
+        if (bt.currencyHash) tokenTransactionsToNotifyMap[bt.currencyHash] = 1;
+        tokenTransactionsToNotifyMap[bt.tokenMintingServiceData.mintingCurrencyHash] = 1;
+      }
     }
 
     return Object.keys(tokenTransactionsToNotifyMap);
   }
 
-  async eventHandler(transactionEvents: any[]) {
+  async eventHandler(transactionEvents: any[], event: string) {
+    const transactionsCurrenciesCount: { [key: number]: string } = {};
     const msgPromises = [];
     if (!transactionEvents?.length) return;
 
     try {
+      if (event === SocketEvents.NumberOfActiveAddresses) {
+        const activeWallets = await getActiveWalletsCount();
+        msgPromises.push(this.gateway.sendMessageToRoom(SocketEvents.NumberOfActiveAddresses, `${SocketEvents.NumberOfActiveAddresses}`, activeWallets));
+      }
+      if (event === SocketEvents.TransactionConfirmationUpdate) {
+        const lastConfirmationTimes = await getConfirmationTime();
+        msgPromises.push(this.gateway.sendMessageToRoom(SocketEvents.NumberOfActiveAddresses, `${SocketEvents.TransactionConfirmationUpdate}`, lastConfirmationTimes));
+      }
       const transactionIds = transactionEvents.map(x => x.id);
       const transactionEntities = await getTransactionsById(transactionIds);
+      const transactionsCurrencyHashes = this.getTransactionsCurrencyHashesToNotify(transactionEntities);
+      const currencies = await getCurrencyIdsByCurrencyHashes(transactionsCurrencyHashes);
+      const currencyIds = currencies.map(currency => currency.id);
+      const currenciesCount = await getCurrencyHashCountByCurrencyId(currencyIds);
       const currencySymbolMap = await getTokensSymbols(transactionEntities);
       const allAddressesToNotify = this.getTransactionsAddressesToNotify(transactionEntities);
       const addressTotalTransactionCountMap = await this.getTotalTransactionCountMap(allAddressesToNotify);
       for (const transaction of transactionEntities) {
         const addressesToNotify = this.getTransactionAddressesToNotify(transaction);
-        const getTransactionCurrencyHashesToNotify = this.getTransactionCurrencyHashesToNotify(transaction);
+        const getTransactionCurrencyHashesToNotify = this.getTransactionsCurrencyHashesToNotify([transaction]);
 
         const eventMessage = new TransactionDto(transaction, currencySymbolMap);
         for (const addressToNotify of addressesToNotify) {
@@ -221,6 +273,9 @@ export class MysqlLiveService {
           msgPromises.push(
             this.gateway.sendMessageToRoom(addressToNotify, `${SocketEvents.AddressTransactionsTotalNotification}`, addressTotalTransactionCountMap[addressToNotify]),
           );
+        }
+        for (const currency of currencies) {
+          msgPromises.push(this.gateway.sendMessageToRoom(currency.hash, `${SocketEvents.TokenTransactionsTotal}`, currenciesCount[currency.id]));
         }
         for (const currencyHash of getTransactionCurrencyHashesToNotify) {
           msgPromises.push(this.gateway.sendMessageToRoom(currencyHash, `${SocketEvents.TokenTransactionsNotification}`, eventMessage));

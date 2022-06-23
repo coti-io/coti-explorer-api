@@ -32,15 +32,32 @@ export class AppGateway implements OnGatewayInit, OnGatewayConnection, OnGateway
   }
 
   @SubscribeMessage('subscribe')
-  subscribe(client: Socket, payload: { address?: string; hash?: string; nodeHash?: string; tokenHash?: string; nodeUpdates?: boolean; treasuryTotals?: boolean }) {
+  subscribe(
+    client: Socket,
+    payload: {
+      address?: string;
+      hash?: string;
+      nodeHash?: string;
+      tokenHash?: string;
+      nodeUpdates?: boolean;
+      treasuryTotals?: boolean;
+      activeWallets?: boolean;
+      transactionConfirmationUpdates?: boolean;
+      transactions?: boolean;
+    },
+  ) {
     try {
       if (!payload) return;
-      const { address, hash, nodeHash, tokenHash, nodeUpdates, treasuryTotals } = payload;
+      const { address, hash, nodeHash, tokenHash, nodeUpdates, treasuryTotals, activeWallets, transactionConfirmationUpdates, transactions } = payload;
       let addressLog = '';
       let hashLog = '';
       let nodeHashLog = '';
+      let tokenLog = '';
       let nodeUpdatesLog = '';
       let treasuryTotalsLog = '';
+      let activeWalletsLog = '';
+      let transactionConfirmationUpdatesLog = '';
+      let transactionsLog = '';
       if (address) {
         client.join(address);
         addressLog = `[address ${address}]`;
@@ -55,7 +72,7 @@ export class AppGateway implements OnGatewayInit, OnGatewayConnection, OnGateway
       }
       if (tokenHash) {
         client.join(tokenHash);
-        hashLog = `[hash ${tokenHash}]`;
+        tokenLog = `[token ${tokenHash}]`;
       }
       if (nodeUpdates) {
         client.join(SocketEvents.NodeUpdates);
@@ -65,21 +82,52 @@ export class AppGateway implements OnGatewayInit, OnGatewayConnection, OnGateway
         client.join(SocketEvents.TreasuryTotalsUpdates);
         treasuryTotalsLog = `[treasuryTotals ${treasuryTotals}]`;
       }
-      this.logger.log(`[subscribe][socketId: ${client.id}]${addressLog}${hashLog}${nodeHashLog}${nodeUpdatesLog}${treasuryTotalsLog}`);
+      if (activeWallets) {
+        client.join(SocketEvents.NumberOfActiveAddresses);
+        activeWalletsLog = `[activeWallets ${activeWallets}]`;
+      }
+      if (transactionConfirmationUpdates) {
+        client.join(SocketEvents.TransactionConfirmationUpdate);
+        transactionConfirmationUpdatesLog = `[transactionConfirmationUpdate ${transactionConfirmationUpdates}]`;
+      }
+      if (transactions) {
+        client.join(SocketEvents.TransactionConfirmationUpdate);
+        transactionsLog = `[transactionsLog ${transactions}]`;
+      }
+      this.logger.log(
+        `[subscribe][socketId: ${client.id}]${addressLog}${hashLog}${nodeHashLog}${tokenLog}${nodeUpdatesLog}${treasuryTotalsLog}${activeWalletsLog}${transactionConfirmationUpdatesLog}${transactionsLog}`,
+      );
     } catch (error) {
       this.logger.warn('socket subscribe failed');
     }
   }
 
   @SubscribeMessage('unsubscribe')
-  unsubscribe(client: Socket, payload: { address?: string; hash?: string; nodeHash?: string; tokenHash?: string; nodeUpdates?: boolean; treasuryTotals?: boolean }) {
+  unsubscribe(
+    client: Socket,
+    payload: {
+      address?: string;
+      hash?: string;
+      nodeHash?: string;
+      tokenHash?: string;
+      nodeUpdates?: boolean;
+      treasuryTotals?: boolean;
+      activeWallets?: boolean;
+      transactionConfirmationUpdates?: boolean;
+      transactions?: boolean;
+    },
+  ) {
     try {
-      const { address, hash, nodeHash, tokenHash, nodeUpdates, treasuryTotals } = payload;
+      const { address, hash, nodeHash, tokenHash, nodeUpdates, treasuryTotals, activeWallets, transactionConfirmationUpdates, transactions } = payload;
       let addressLog = '';
       let hashLog = '';
-      const nodeHashLog = '';
+      let nodeHashLog = '';
+      let tokenLog = '';
       let nodeUpdatesLog = '';
       let treasuryTotalsLog = '';
+      let activeWalletsLog = '';
+      let transactionConfirmationUpdatesLog = '';
+      let transactionsLog = '';
       if (address) {
         client.leave(address);
         addressLog = `[address ${address}]`;
@@ -90,11 +138,11 @@ export class AppGateway implements OnGatewayInit, OnGatewayConnection, OnGateway
       }
       if (nodeHash) {
         client.leave(nodeHash);
-        hashLog = `[hash ${nodeHash}]`;
+        nodeHashLog = `[hash ${nodeHash}]`;
       }
       if (tokenHash) {
         client.leave(tokenHash);
-        hashLog = `[hash ${tokenHash}]`;
+        tokenLog = `[hash ${tokenHash}]`;
       }
       if (nodeUpdates) {
         client.leave(SocketEvents.NodeUpdates);
@@ -104,7 +152,25 @@ export class AppGateway implements OnGatewayInit, OnGatewayConnection, OnGateway
         client.leave(SocketEvents.TreasuryTotalsUpdates);
         treasuryTotalsLog = `[treasuryTotals ${treasuryTotals}]`;
       }
-      this.logger.log(`[unsubscribe][socketId: ${client.id}]${addressLog}${hashLog}${nodeHashLog}${nodeUpdatesLog}${treasuryTotalsLog}${nodeUpdatesLog}${treasuryTotalsLog}`);
+      if (activeWallets) {
+        client.leave(SocketEvents.NumberOfActiveAddresses);
+        activeWalletsLog = `[activeWallets ${activeWallets}]`;
+      }
+      if (activeWallets) {
+        client.join(SocketEvents.TransactionConfirmationUpdate);
+        activeWalletsLog = `[transactionConfirmationUpdate ${activeWallets}]`;
+      }
+      if (transactionConfirmationUpdates) {
+        client.join(SocketEvents.TransactionConfirmationUpdate);
+        transactionConfirmationUpdatesLog = `[transactionConfirmationUpdate ${activeWallets}]`;
+      }
+      if (transactions) {
+        client.join(SocketEvents.Transactions);
+        transactionsLog = `[transactionsLog ${transactions}]`;
+      }
+      this.logger.log(
+        `[unsubscribe][socketId: ${client.id}]${addressLog}${hashLog}${nodeHashLog}${tokenLog}${nodeUpdatesLog}${treasuryTotalsLog}${nodeUpdatesLog}${treasuryTotalsLog}${activeWalletsLog}${transactionConfirmationUpdatesLog}${transactionsLog}`,
+      );
     } catch (error) {
       this.logger.warn('socket unsubscribe failed');
     }
