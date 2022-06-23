@@ -174,22 +174,22 @@ export class TokenService {
     const explorerManager = getManager();
     const dbAppManager = getManager('db_app');
     try {
-      const tokensRepository = explorerManager.getRepository<TokenEntity>(ExplorerAppEntitiesNames.tokens);
       const currencyDataRepository = dbAppManager.getRepository<Currency>(DbAppEntitiesNames.currencies);
-      const [tokenError, token] = await exec(tokensRepository.findOne({ currencyHash: hash }));
-      if (tokenError) {
-        throw new ExplorerInternalServerError(tokenError.message);
-      }
-      if (!token) {
-        throw new BadRequestException(`Token with currencyHash: ${hash} does not exits`);
-      }
-      const currencyQuery = currencyDataRepository.createQueryBuilder('c').innerJoinAndSelect('c.originatorCurrencyData', 'ocd').where({ hash: token.currencyHash });
+      const currencyQuery = currencyDataRepository.createQueryBuilder('c').innerJoinAndSelect('c.originatorCurrencyData', 'ocd').where({ hash });
       const [currencyError, currency] = await exec(currencyQuery.getOne());
       if (currencyError) {
         throw new ExplorerInternalServerError(currencyError.message);
       }
       if (!currency) {
-        throw new ExplorerInternalServerError(`No currency with currencyHash ${token.currencyHash}`);
+        throw new ExplorerInternalServerError(`No currency with currencyHash ${hash}`);
+      }
+      const tokensRepository = explorerManager.getRepository<TokenEntity>(ExplorerAppEntitiesNames.tokens);
+      const [tokenError, token] = await exec(tokensRepository.findOne({ currencyHash: hash }));
+      if (tokenError) {
+        throw new ExplorerInternalServerError(tokenError.message);
+      }
+      if (!token) {
+        throw new BadRequestException(`Token info for currencyHash: ${hash} does not exits`);
       }
 
       const network = this.configService.get<string>('NETWORK');
@@ -214,7 +214,7 @@ export class TokenService {
       return { iconUrl };
     } catch (error) {
       this.logger.error(error);
-      throw new ExplorerError(error);
+      throw error;
     }
   }
 
