@@ -138,7 +138,7 @@ export class TransactionService {
         throw results.find(pVal => pVal.status === 'rejected');
       }
 
-      return new AddressesTransactionsResponseDto(totalTransactions, transactions, successResults[0].value, successResults[1].value, successResults[2].value);
+      return new AddressesTransactionsResponseDto(totalTransactions, transactions, successResults[0].value, successResults[1].value, successResults[2].value.nativeBalance);
     } catch (error) {
       this.logger.error(error);
       throw new ExplorerError(error);
