@@ -58,12 +58,12 @@ export class TokenInfoResponseDto {
   twitter: string;
   gitbook: string;
   medium: string;
-  circulatingSupply: number;
-  trustChainSupply: number;
+  circulatingSupply: string;
+  trustChainSupply: string;
   holders: number;
   createTime: string;
 
-  constructor(currency: Currency, token: TokenEntity, circulatingSupply: number) {
+  constructor(currency: Currency, token: TokenEntity, circulatingSupply: string) {
     this.name = currency.originatorCurrencyData.name;
     this.symbol = currency.originatorCurrencyData.symbol;
     this.description = currency.originatorCurrencyData.description;
@@ -77,8 +77,8 @@ export class TokenInfoResponseDto {
     this.telegram = token?.telegram;
     this.gitbook = token?.gitbook;
     this.medium = token?.medium;
-    this.circulatingSupply = circulatingSupply;
-    this.trustChainSupply = circulatingSupply;
+    this.circulatingSupply = circulatingSupply || '0';
+    this.trustChainSupply = circulatingSupply || '0';
     this.createTime = currency?.createTime.toString();
   }
 }

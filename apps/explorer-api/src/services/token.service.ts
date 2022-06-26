@@ -54,12 +54,12 @@ export class TokenService {
       }
 
       const circulatingSupplyQuery = dbAppManager
-        .getRepository<{ circulatingSupply: number }>(DbAppEntitiesNames.currencies)
+        .getRepository<Currency>(DbAppEntitiesNames.currencies)
         .createQueryBuilder('c')
         .innerJoinAndSelect('c.addressBalance', 'addressBalance')
         .select(`SUM(amount) as circulatingSupply`)
         .where({ hash: request.currencyHash });
-      const [circulatingSupplyError, circulatingSupplyQueryRes] = await exec(circulatingSupplyQuery.getRawOne());
+      const [circulatingSupplyError, circulatingSupplyQueryRes] = await exec(circulatingSupplyQuery.getRawOne<{ circulatingSupply: string }>());
       if (circulatingSupplyError) {
         throw new ExplorerInternalServerError(circulatingSupplyError.message);
       }
@@ -115,7 +115,7 @@ export class TokenService {
         .select(`hash, SUM(amount) as circulatingSupply`)
         .where({ hash: In(currencyHashes) })
         .groupBy('hash');
-      const [circulatingSupplyError, circulatingSupplyQueryRes] = await exec(circulatingSupplyQuery.getRawMany<{ hash: string; circulatingSupply: number }>());
+      const [circulatingSupplyError, circulatingSupplyQueryRes] = await exec(circulatingSupplyQuery.getRawMany<{ hash: string; circulatingSupply: string }>());
       if (circulatingSupplyError) {
         throw new ExplorerInternalServerError(circulatingSupplyError.message);
       }
