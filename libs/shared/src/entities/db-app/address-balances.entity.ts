@@ -82,8 +82,8 @@ export async function getNativeBalance(addressHash: string): Promise<{ nativeBal
   return { nativeBalance: balance.amount };
 }
 
-export async function getNativeBalances(addressHashes: string[]): Promise<{ [key: string]: { [key: string]: string } }> {
-  const balanceMap: { [key: string]: { [key: string]: string } } = {};
+export async function getNativeBalances(addressHashes: string[]): Promise<{ [key: string]: { nativeBalance: string; tokenData: { [key: string]: string } } }> {
+  const balanceMap: { [key: string]: { nativeBalance: string; tokenData: { [key: string]: string } } } = {};
 
   const [addressBalancesError, addressBalances] = await exec(
     getManager('db_app')
@@ -98,13 +98,18 @@ export async function getNativeBalances(addressHashes: string[]): Promise<{ [key
   if (addressBalancesError) {
     throw addressBalancesError;
   }
-
+  const tokenData = {};
+  let nativeBalance;
   for (const addressBalance of addressBalances) {
-    if (!balanceMap[addressBalance.addressHash]) {
-      balanceMap[addressBalance.addressHash] = { [addressBalance?.currency?.originatorCurrencyData?.symbol || 'coti']: addressBalance.amount };
+    const address = addressBalance.addressHash;
+    if (!balanceMap[address]) {
+      balanceMap[address] = { nativeBalance: '0', tokenData: {} };
+    }
+    const symbol = addressBalance.currency?.originatorCurrencyData?.symbol;
+    if (!symbol) {
+      balanceMap[address].nativeBalance = addressBalance.amount;
     } else {
-      const innerObj = balanceMap[addressBalance.addressHash];
-      innerObj[addressBalance?.currency?.originatorCurrencyData?.symbol || 'coti'] = addressBalance.amount;
+      balanceMap[address].tokenData[symbol] = addressBalance.amount;
     }
   }
 
