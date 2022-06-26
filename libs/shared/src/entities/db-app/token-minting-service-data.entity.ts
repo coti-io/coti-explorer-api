@@ -29,3 +29,14 @@ export class TokenMintingServiceData extends BaseEntity {
   @OneToOne(() => TokenMintingFeeBaseTransaction, tokenMintingFeeBaseTransaction => tokenMintingFeeBaseTransaction.tokenMintingServiceData)
   tokenMintBaseTransaction: TokenMintingFeeBaseTransaction;
 }
+
+export const getTmsdUpdate = (): string => {
+  return `
+    SELECT 
+    *
+    FROM
+    token_minting_service_data as tmsd
+    WHERE 
+    updateTime > DATE_ADD(NOW(), INTERVAL -10 MINUTE)
+  `;
+};

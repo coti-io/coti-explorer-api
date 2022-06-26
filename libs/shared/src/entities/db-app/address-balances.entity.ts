@@ -1,11 +1,13 @@
 import { exec } from '../../utils';
-import { Column, Entity, getManager, In, JoinColumn, ManyToOne } from 'typeorm';
+import { Column, Entity, EntityManager, getManager, In, JoinColumn, ManyToOne } from 'typeorm';
 import { AddressTransactionCount } from './address-transaction-counts.entity';
 import { BaseEntity } from '../base.entity';
 import { Currency } from './currencies.entity';
 import { DbAppEntitiesNames } from './entities.names';
 import { DbAppTransaction, TransactionCurrency } from '@app/shared/entities';
 import { WalletCountResponseDto } from '@app/shared/dtos';
+import { ExplorerInternalServerError } from '../../../../../apps/explorer-api/src/errors';
+import { utils as CryptoUtils } from '@coti-io/crypto';
 
 @Entity(DbAppEntitiesNames.addressBalances)
 export class AddressBalance extends BaseEntity {
@@ -80,26 +82,55 @@ export async function getNativeBalance(addressHash: string): Promise<{ nativeBal
   return { nativeBalance: balance.amount };
 }
 
-export async function getNativeBalances(addressHashes: string[]): Promise<{ [key: string]: string }> {
-  const balanceMap: { [key: string]: string } = {};
+export async function getNativeBalances(addressHashes: string[]): Promise<{ [key: string]: { [key: string]: string } }> {
+  const balanceMap: { [key: string]: { [key: string]: string } } = {};
 
-  const [balancesError, balances] = await exec(
+  const [addressBalancesError, addressBalances] = await exec(
     getManager('db_app')
       .getRepository<AddressBalance>(DbAppEntitiesNames.addressBalances)
       .createQueryBuilder('ab')
+      .innerJoinAndSelect('ab.currency', 'c')
+      .leftJoinAndSelect('c.originatorCurrencyData', 'ocd')
       .where({ addressHash: In(addressHashes) })
       .getMany(),
   );
 
-  if (balancesError) {
-    throw balancesError;
+  if (addressBalancesError) {
+    throw addressBalancesError;
   }
 
-  for (const balance of balances) {
-    balanceMap[balance.addressHash] = balance.amount;
+  for (const addressBalance of addressBalances) {
+    if (!balanceMap[addressBalance.addressHash]) {
+      balanceMap[addressBalance.addressHash] = { [addressBalance?.currency?.originatorCurrencyData?.symbol || 'coti']: addressBalance.amount };
+    } else {
+      const innerObj = balanceMap[addressBalance.addressHash];
+      innerObj[addressBalance?.currency?.originatorCurrencyData?.symbol || 'coti'] = addressBalance.amount;
+    }
   }
 
   return balanceMap;
+}
+
+export async function TokenCirculatingSupplyUpdate(currencyHashes: string[]): Promise<{ hash: string; circulatingSupply: string; trustChainSupply: string }[]> {
+  const dbAppManager = getManager('db_app');
+  currencyHashes = currencyHashes.filter(currencyHash => currencyHash !== CryptoUtils.getCurrencyHashBySymbol('coti'));
+
+  const circulatingSupplyQuery = dbAppManager
+    .getRepository<Currency>(DbAppEntitiesNames.currencies)
+    .createQueryBuilder('c')
+    .innerJoinAndSelect(`c.addressBalance`, 'addressBalance')
+    .select(`hash, SUM(amount) as circulatingSupply`)
+    .addSelect(`hash, SUM(amount) as trustChainSupply`)
+    .where({ hash: In(currencyHashes) })
+    .groupBy('hash');
+  const [circulatingSupplyError, circulatingSupplyQueryRes] = await exec(
+    circulatingSupplyQuery.getRawMany<{ hash: string; circulatingSupply: string; trustChainSupply: string }>(),
+  );
+  if (circulatingSupplyError) {
+    throw new ExplorerInternalServerError(circulatingSupplyError.message);
+  }
+
+  return circulatingSupplyQueryRes;
 }
 
 export const getCountActiveAddresses = (): string => {

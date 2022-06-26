@@ -6,20 +6,20 @@ import {
   exec,
   getActiveWalletsCount,
   getConfirmationTime,
-  getConfirmationTimeUpdate,
   getCountActiveAddresses,
   getCurrencyHashCountByCurrencyId,
   getCurrencyIdsByCurrencyHashes,
   getNativeBalances,
+  getTmsdUpdate,
   getTokensSymbols,
   getTransactionsById,
   getTransactionsCount,
   getTransactionsQuery,
+  TokenCirculatingSupplyUpdate,
   TransactionDto,
 } from '@app/shared';
 import { AppGateway } from '../gateway';
 import { utils as CryptoUtils } from '@coti-io/crypto';
-import { number } from 'joi';
 
 const firstRunMap = {};
 
@@ -37,6 +37,7 @@ export enum SocketEvents {
   Transactions = 'transactions',
   TokenTransactionsTotal = 'tokenTransactionsTotal',
   AddressBalanceUpdate = 'addressBalanceUpdate',
+  TokenCirculatingSupplyUpdate = 'tokenCirculatingSupplyUpdate',
 }
 
 type MonitoredTx = {
@@ -131,6 +132,23 @@ export class MysqlLiveService {
       ])
       .on('update', async (diff: Diff) => {
         const event = SocketEvents.NumberOfActiveAddresses;
+        if (!firstRunMap[event]) {
+          firstRunMap[event] = true;
+          return;
+        }
+        if (diff.added && diff.added.length > 0) {
+          await this.eventHandler(diff.added, event);
+        }
+      });
+
+    this.liveConnection
+      .select(getTmsdUpdate(), [
+        {
+          table: `token_minting_service_data`,
+        },
+      ])
+      .on('update', async (diff: Diff) => {
+        const event = SocketEvents.TokenCirculatingSupplyUpdate;
         if (!firstRunMap[event]) {
           firstRunMap[event] = true;
           return;
@@ -247,6 +265,13 @@ export class MysqlLiveService {
     if (!transactionEvents?.length) return;
 
     try {
+      if (event === SocketEvents.TokenCirculatingSupplyUpdate) {
+        const currencyHashesToNotify = transactionEvents.map(tx => tx.mintingCurrencyHash);
+        const circulatingSupplies = await TokenCirculatingSupplyUpdate(currencyHashesToNotify);
+        for (const cs of circulatingSupplies) {
+          msgPromises.push(this.gateway.sendMessageToRoom(cs.hash, `${SocketEvents.TokenCirculatingSupplyUpdate}`, cs));
+        }
+      }
       if (event === SocketEvents.NumberOfActiveAddresses) {
         const activeWallets = await getActiveWalletsCount();
         msgPromises.push(this.gateway.sendMessageToRoom(SocketEvents.NumberOfActiveAddresses, `${SocketEvents.NumberOfActiveAddresses}`, activeWallets));
