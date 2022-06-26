@@ -80,6 +80,28 @@ export async function getNativeBalance(addressHash: string): Promise<{ nativeBal
   return { nativeBalance: balance.amount };
 }
 
+export async function getNativeBalances(addressHashes: string[]): Promise<{ [key: string]: string }> {
+  const balanceMap: { [key: string]: string } = {};
+
+  const [balancesError, balances] = await exec(
+    getManager('db_app')
+      .getRepository<AddressBalance>(DbAppEntitiesNames.addressBalances)
+      .createQueryBuilder('ab')
+      .where({ addressHash: In(addressHashes) })
+      .getMany(),
+  );
+
+  if (balancesError) {
+    throw balancesError;
+  }
+
+  for (const balance of balances) {
+    balanceMap[balance.addressHash] = balance.amount;
+  }
+
+  return balanceMap;
+}
+
 export const getCountActiveAddresses = (): string => {
   return `
     SELECT 

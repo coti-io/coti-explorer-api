@@ -10,6 +10,7 @@ import {
   getCountActiveAddresses,
   getCurrencyHashCountByCurrencyId,
   getCurrencyIdsByCurrencyHashes,
+  getNativeBalances,
   getTokensSymbols,
   getTransactionsById,
   getTransactionsCount,
@@ -35,6 +36,7 @@ export enum SocketEvents {
   TreasuryTotalsUpdates = 'treasuryTotalsUpdates',
   Transactions = 'transactions',
   TokenTransactionsTotal = 'tokenTransactionsTotal',
+  AddressBalanceUpdate = 'addressBalanceUpdate',
 }
 
 type MonitoredTx = {
@@ -241,7 +243,6 @@ export class MysqlLiveService {
   }
 
   async eventHandler(transactionEvents: any[], event: string) {
-    const transactionsCurrenciesCount: { [key: number]: string } = {};
     const msgPromises = [];
     if (!transactionEvents?.length) return;
 
@@ -262,6 +263,7 @@ export class MysqlLiveService {
       const currenciesCount = await getCurrencyHashCountByCurrencyId(currencyIds);
       const currencySymbolMap = await getTokensSymbols(transactionEntities);
       const allAddressesToNotify = this.getTransactionsAddressesToNotify(transactionEntities);
+      const addressesBalanceMap = await getNativeBalances(allAddressesToNotify);
       const addressTotalTransactionCountMap = await this.getTotalTransactionCountMap(allAddressesToNotify);
       for (const transaction of transactionEntities) {
         const addressesToNotify = this.getTransactionAddressesToNotify(transaction);
@@ -270,6 +272,7 @@ export class MysqlLiveService {
         const eventMessage = new TransactionDto(transaction, currencySymbolMap);
         for (const addressToNotify of addressesToNotify) {
           msgPromises.push(this.gateway.sendMessageToRoom(addressToNotify, `${SocketEvents.AddressTransactionsNotification}`, eventMessage));
+          msgPromises.push(this.gateway.sendMessageToRoom(addressToNotify, `${SocketEvents.AddressBalanceUpdate}`, addressesBalanceMap[addressToNotify]));
           msgPromises.push(
             this.gateway.sendMessageToRoom(addressToNotify, `${SocketEvents.AddressTransactionsTotalNotification}`, addressTotalTransactionCountMap[addressToNotify]),
           );
