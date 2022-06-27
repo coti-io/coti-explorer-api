@@ -3,12 +3,15 @@ import {
   CreateTokenInfoRequestDto,
   Currency,
   DbAppEntitiesNames,
+  DbAppTransaction,
   exec,
   ExplorerAppEntitiesNames,
   TokenEntity,
+  TokenGenerationFeeBaseTransaction,
   TokenInfoBySymbolRequestDto,
   TokenInfoRequestDto,
   TokenInfoResponseDto,
+  TokenRequestDto,
   TokenUploadImageUrlResponseDto,
 } from '@app/shared';
 
@@ -87,11 +90,33 @@ export class TokenService {
   }
 
   // end point for admin
-  async getTokensInfo(): Promise<TokenInfoResponseDto[]> {
+  async getTokensInfo(body: TokenRequestDto): Promise<TokenInfoResponseDto[]> {
     const dbAppManager = getManager('db_app');
     const explorerManager = getManager();
+    const { limit, offset } = body;
     try {
-      const currencyQuery = dbAppManager.getRepository<Currency>(DbAppEntitiesNames.currencies).createQueryBuilder('c').innerJoinAndSelect('c.originatorCurrencyData', 'ocd');
+      const tgbtQuery = dbAppManager
+        .getRepository<TokenGenerationFeeBaseTransaction>(DbAppEntitiesNames.tokenGenerationFeeBaseTransactions)
+        .createQueryBuilder('tgbt')
+        .innerJoinAndSelect('tgbt.baseTransaction', 't')
+        .orderBy('t.attachmentTime')
+        .limit(limit)
+        .offset(offset);
+
+      const [tgbtError, tgbt] = await exec(tgbtQuery.getMany());
+      if (tgbtError) {
+        throw new ExplorerInternalServerError(tgbtError.message);
+      }
+      const tgbtIds = tgbt.map(baseTx => baseTx.id);
+
+      const currencyQuery = dbAppManager
+        .getRepository<Currency>(DbAppEntitiesNames.currencies)
+        .createQueryBuilder('c')
+        .innerJoinAndSelect('c.originatorCurrencyData', 'ocd')
+        .innerJoinAndSelect('ocd.tokenGenerationServiceData', 'tgsd')
+        .innerJoinAndSelect('tgsd.tokenGenerationBaseTransaction', 'tgbt')
+        .where(`tgbt.id IN (:ids)`, { ids: tgbtIds });
+
       const [currencyError, currencies] = await exec(currencyQuery.getMany());
       if (currencyError) {
         throw new ExplorerInternalServerError(currencyError.message);

@@ -247,12 +247,12 @@ export class MysqlLiveService {
         for (const cs of circulatingSupplies) {
           msgPromises.push(this.gateway.sendMessageToRoom(cs.hash, `${SocketEvents.TokenCirculatingSupplyUpdate}`, cs));
         }
-        return;
+        // return;
       }
       if (event === SocketEvents.NumberOfActiveAddresses) {
         const activeWallets = await getActiveWalletsCount();
         msgPromises.push(this.gateway.sendMessageToRoom(SocketEvents.NumberOfActiveAddresses, `${SocketEvents.NumberOfActiveAddresses}`, activeWallets));
-        return;
+        // return;
       }
       if (event === SocketEvents.TransactionConfirmationUpdate) {
         const lastConfirmationTimes = await getConfirmationTime();
@@ -288,7 +288,7 @@ export class MysqlLiveService {
         }
         msgPromises.push(this.gateway.sendMessageToRoom(transaction.nodeHash, `${SocketEvents.NodeTransactionsNotification}`, eventMessage));
         msgPromises.push(this.gateway.sendMessageToRoom(transaction.hash, `${SocketEvents.TransactionDetails}`, eventMessage));
-        msgPromises.push(this.gateway.sendMessageToRoom(SocketEvents.GeneralTransactionsNotification, SocketEvents.GeneralTransactionsNotification, eventMessage));
+        msgPromises.push(this.gateway.sendMessageToRoom(SocketEvents.GeneralTransactionsNotification, `${SocketEvents.GeneralTransactionsNotification}`, eventMessage));
       }
 
       await Promise.all(msgPromises);

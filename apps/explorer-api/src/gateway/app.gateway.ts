@@ -91,8 +91,8 @@ export class AppGateway implements OnGatewayInit, OnGatewayConnection, OnGateway
         transactionConfirmationUpdatesLog = `[transactionConfirmationUpdate ${transactionConfirmationUpdates}]`;
       }
       if (transactions) {
-        client.join(SocketEvents.TransactionConfirmationUpdate);
-        transactionsLog = `[transactionsLog ${transactions}]`;
+        client.join(SocketEvents.GeneralTransactionsNotification);
+        transactionsLog = `[transactions ${transactions}]`;
       }
       this.logger.log(
         `[subscribe][socketId: ${client.id}]${addressLog}${hashLog}${nodeHashLog}${tokenLog}${nodeUpdatesLog}${treasuryTotalsLog}${activeWalletsLog}${transactionConfirmationUpdatesLog}${transactionsLog}`,

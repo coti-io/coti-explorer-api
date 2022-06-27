@@ -1,6 +1,20 @@
-import { IsNotEmpty, IsOptional, IsString, IsUrl } from 'class-validator';
+import { IsNotEmpty, IsNumber, IsOptional, IsString, IsUrl, Max, Min } from 'class-validator';
 import { Currency } from '../entities/db-app';
 import { TokenEntity } from '../entities/explorer';
+import { Optional } from '@nestjs/common';
+
+export class TokenRequestDto {
+  @Optional()
+  @IsNumber()
+  @Max(50)
+  @Min(0)
+  limit = 50;
+
+  @Optional()
+  @IsNumber()
+  @Min(0)
+  offset = 0;
+}
 
 export class TokenInfoRequestDto {
   @IsString()

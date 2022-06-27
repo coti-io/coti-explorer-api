@@ -1,4 +1,4 @@
-import { Column, Entity, OneToOne } from 'typeorm';
+import { Column, Entity, JoinColumn, OneToOne } from 'typeorm';
 import { BaseEntity } from '../base.entity';
 import { Currency } from './currencies.entity';
 import { DbAppEntitiesNames } from './entities.names';
@@ -28,6 +28,7 @@ export class OriginatorCurrencyData extends BaseEntity {
   scale: number;
 
   @OneToOne(() => TokenGenerationServiceData, tokenGenerationServiceData => tokenGenerationServiceData.originatorCurrencyData)
+  @JoinColumn({ name: 'serviceDataId', referencedColumnName: 'id' })
   tokenGenerationServiceData: TokenGenerationServiceData;
 
   @OneToOne(() => Currency, currency => currency.originatorCurrencyData)
