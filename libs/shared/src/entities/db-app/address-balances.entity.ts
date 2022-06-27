@@ -116,7 +116,7 @@ export async function getNativeBalances(addressHashes: string[]): Promise<any> {
   return balanceMap;
 }
 
-export async function TokenCirculatingSupplyUpdate(currencyHashes: string[]): Promise<{ hash: string; circulatingSupply: string; trustChainSupply: string }[]> {
+export async function TokenCirculatingSupplyUpdate(currencyHashes: string[]): Promise<{ currencyHash: string; circulatingSupply: string; trustChainSupply: string }[]> {
   const dbAppManager = getManager('db_app');
   currencyHashes = currencyHashes.filter(currencyHash => currencyHash !== CryptoUtils.getCurrencyHashBySymbol('coti'));
 
@@ -124,12 +124,12 @@ export async function TokenCirculatingSupplyUpdate(currencyHashes: string[]): Pr
     .getRepository<Currency>(DbAppEntitiesNames.currencies)
     .createQueryBuilder('c')
     .innerJoinAndSelect(`c.addressBalance`, 'addressBalance')
-    .select(`hash, SUM(amount) as circulatingSupply`)
-    .addSelect(`hash, SUM(amount) as trustChainSupply`)
+    .select(`hash as currencyHash, SUM(amount) as circulatingSupply`)
+    .addSelect(`hash as currencyHash, SUM(amount) as trustChainSupply`)
     .where({ hash: In(currencyHashes) })
     .groupBy('hash');
   const [circulatingSupplyError, circulatingSupplyQueryRes] = await exec(
-    circulatingSupplyQuery.getRawMany<{ hash: string; circulatingSupply: string; trustChainSupply: string }>(),
+    circulatingSupplyQuery.getRawMany<{ currencyHash: string; circulatingSupply: string; trustChainSupply: string }>(),
   );
   if (circulatingSupplyError) {
     throw new ExplorerInternalServerError(circulatingSupplyError.message);

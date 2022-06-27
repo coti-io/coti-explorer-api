@@ -21,6 +21,7 @@ export class TaskService implements OnModuleInit {
     this.runEveryXSeconds('updateNodeData', this.nodeService.updateNodesData.bind(this.nodeService), 60);
     this.runEveryXSeconds('updateConfirmationTime', this.cacheService.updateTransactionConfirmationTime.bind(this.cacheService), 60);
     this.runEveryXSeconds('updateTreasuryTotals', this.cacheService.updateTreasuryTotals.bind(this.cacheService), 60);
+    this.runEveryXSeconds('getCotiPrice', this.cacheService.getCotiPrice.bind(this.cacheService), 60);
   }
 
   async runEveryXSeconds<T>(name: string, functionToRun: () => Promise<T>, minIntervalInSeconds: number): Promise<void> {

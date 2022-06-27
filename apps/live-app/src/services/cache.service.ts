@@ -52,6 +52,15 @@ export class CacheService {
     return;
   }
 
+  async getCotiPrice(): Promise<void> {
+    const [getCotiPriceError, getCotiPrice] = await exec(firstValueFrom(this.httpService.get(`${this.treasuryUrl}/get-coti-price`)));
+    if (getCotiPriceError) throw getCotiPriceError;
+
+    await this.appGateway.sendMessageToRoom(SocketEvents.CotiPrice, SocketEvents.CotiPrice, getCotiPrice.data);
+
+    return;
+  }
+
   async getConfirmationTime(manager: EntityManager): Promise<TransactionConfirmationTimeResponseDto> {
     try {
       const query = manager

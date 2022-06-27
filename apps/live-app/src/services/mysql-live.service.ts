@@ -37,6 +37,7 @@ export enum SocketEvents {
   TokenTransactionsTotal = 'tokenTransactionsTotal',
   AddressBalanceUpdate = 'addressBalanceUpdate',
   TokenCirculatingSupplyUpdate = 'tokenCirculatingSupplyUpdate',
+  CotiPrice = 'cotiPrice',
 }
 
 type MonitoredTx = {
@@ -215,7 +216,7 @@ export class MysqlLiveService {
       const addressTotalTransactionCountMap = await this.getTotalTransactionCountMap(allAddressesToNotify);
       if (circulatingSupplyUpdates.length > 0) {
         for (const cs of circulatingSupplyUpdates) {
-          msgPromises.push(this.gateway.sendMessageToRoom(cs.hash, `${SocketEvents.TokenCirculatingSupplyUpdate}`, cs));
+          msgPromises.push(this.gateway.sendMessageToRoom(cs.currencyHash, `${SocketEvents.TokenCirculatingSupplyUpdate}`, cs));
         }
       }
       for (const transaction of transactionEntities) {

@@ -44,11 +44,12 @@ export class AppGateway implements OnGatewayInit, OnGatewayConnection, OnGateway
       activeWallets?: boolean;
       transactionConfirmationUpdates?: boolean;
       transactions?: boolean;
+      cotiPrice?: boolean;
     },
   ) {
     try {
       if (!payload) return;
-      const { address, hash, nodeHash, tokenHash, nodeUpdates, treasuryTotals, activeWallets, transactionConfirmationUpdates, transactions } = payload;
+      const { address, hash, nodeHash, tokenHash, nodeUpdates, treasuryTotals, activeWallets, transactionConfirmationUpdates, transactions, cotiPrice } = payload;
       let addressLog = '';
       let hashLog = '';
       let nodeHashLog = '';
@@ -58,6 +59,7 @@ export class AppGateway implements OnGatewayInit, OnGatewayConnection, OnGateway
       let activeWalletsLog = '';
       let transactionConfirmationUpdatesLog = '';
       let transactionsLog = '';
+      let cotiPriceLog = '';
       if (address) {
         client.join(address);
         addressLog = `[address ${address}]`;
@@ -94,8 +96,12 @@ export class AppGateway implements OnGatewayInit, OnGatewayConnection, OnGateway
         client.join(SocketEvents.GeneralTransactionsNotification);
         transactionsLog = `[transactions ${transactions}]`;
       }
+      if (cotiPrice) {
+        client.join(SocketEvents.CotiPrice);
+        cotiPriceLog = `[cotiPrice ${cotiPrice}]`;
+      }
       this.logger.log(
-        `[subscribe][socketId: ${client.id}]${addressLog}${hashLog}${nodeHashLog}${tokenLog}${nodeUpdatesLog}${treasuryTotalsLog}${activeWalletsLog}${transactionConfirmationUpdatesLog}${transactionsLog}`,
+        `[subscribe][socketId: ${client.id}]${addressLog}${hashLog}${nodeHashLog}${tokenLog}${nodeUpdatesLog}${treasuryTotalsLog}${activeWalletsLog}${transactionConfirmationUpdatesLog}${transactionsLog}${cotiPriceLog}`,
       );
     } catch (error) {
       this.logger.warn('socket subscribe failed');
@@ -115,10 +121,11 @@ export class AppGateway implements OnGatewayInit, OnGatewayConnection, OnGateway
       activeWallets?: boolean;
       transactionConfirmationUpdates?: boolean;
       transactions?: boolean;
+      cotiPrice?: boolean;
     },
   ) {
     try {
-      const { address, hash, nodeHash, tokenHash, nodeUpdates, treasuryTotals, activeWallets, transactionConfirmationUpdates, transactions } = payload;
+      const { address, hash, nodeHash, tokenHash, nodeUpdates, treasuryTotals, activeWallets, transactionConfirmationUpdates, transactions, cotiPrice } = payload;
       let addressLog = '';
       let hashLog = '';
       let nodeHashLog = '';
@@ -128,6 +135,7 @@ export class AppGateway implements OnGatewayInit, OnGatewayConnection, OnGateway
       let activeWalletsLog = '';
       let transactionConfirmationUpdatesLog = '';
       let transactionsLog = '';
+      let cotiPriceLog = '';
       if (address) {
         client.leave(address);
         addressLog = `[address ${address}]`;
@@ -142,7 +150,7 @@ export class AppGateway implements OnGatewayInit, OnGatewayConnection, OnGateway
       }
       if (tokenHash) {
         client.leave(tokenHash);
-        tokenLog = `[hash ${tokenHash}]`;
+        tokenLog = `[token ${tokenHash}]`;
       }
       if (nodeUpdates) {
         client.leave(SocketEvents.NodeUpdates);
@@ -156,20 +164,20 @@ export class AppGateway implements OnGatewayInit, OnGatewayConnection, OnGateway
         client.leave(SocketEvents.NumberOfActiveAddresses);
         activeWalletsLog = `[activeWallets ${activeWallets}]`;
       }
-      if (activeWallets) {
-        client.join(SocketEvents.TransactionConfirmationUpdate);
-        activeWalletsLog = `[transactionConfirmationUpdate ${activeWallets}]`;
-      }
       if (transactionConfirmationUpdates) {
-        client.join(SocketEvents.TransactionConfirmationUpdate);
-        transactionConfirmationUpdatesLog = `[transactionConfirmationUpdate ${activeWallets}]`;
+        client.leave(SocketEvents.TransactionConfirmationUpdate);
+        transactionConfirmationUpdatesLog = `[transactionConfirmationUpdate ${transactionConfirmationUpdates}]`;
       }
       if (transactions) {
-        client.join(SocketEvents.Transactions);
-        transactionsLog = `[transactionsLog ${transactions}]`;
+        client.leave(SocketEvents.GeneralTransactionsNotification);
+        transactionsLog = `[transactions ${transactions}]`;
+      }
+      if (cotiPrice) {
+        client.leave(SocketEvents.CotiPrice);
+        cotiPriceLog = `[cotiPrice ${cotiPrice}]`;
       }
       this.logger.log(
-        `[unsubscribe][socketId: ${client.id}]${addressLog}${hashLog}${nodeHashLog}${tokenLog}${nodeUpdatesLog}${treasuryTotalsLog}${nodeUpdatesLog}${treasuryTotalsLog}${activeWalletsLog}${transactionConfirmationUpdatesLog}${transactionsLog}`,
+        `[unsubscribe][socketId: ${client.id}]${addressLog}${hashLog}${nodeHashLog}${tokenLog}${nodeUpdatesLog}${treasuryTotalsLog}${nodeUpdatesLog}${treasuryTotalsLog}${activeWalletsLog}${transactionConfirmationUpdatesLog}${transactionsLog}${cotiPriceLog}`,
       );
     } catch (error) {
       this.logger.warn('socket unsubscribe failed');
