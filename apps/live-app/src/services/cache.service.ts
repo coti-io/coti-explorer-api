@@ -27,9 +27,7 @@ export class CacheService {
     if (confirmationTimeError) throw confirmationTimeError;
 
     const entity = manager.getRepository<ConfirmationTimeEntity>(ExplorerAppEntitiesNames.confirmationTimes).create({
-      average: confirmationTime.avg,
-      minimum: confirmationTime.min,
-      maximum: confirmationTime.max,
+      ...confirmationTime,
     });
 
     const [saveError] = await exec(manager.save(entity));
@@ -61,9 +59,9 @@ export class CacheService {
         .createQueryBuilder('t')
         .select(
           `
-      AVG(t.transactionConsensusUpdateTime - t.attachmentTime) avg, 
-      MIN(t.transactionConsensusUpdateTime - t.attachmentTime) min,
-      MAX(t.transactionConsensusUpdateTime - t.attachmentTime) max`,
+      AVG(t.transactionConsensusUpdateTime - t.attachmentTime) average, 
+      MIN(t.transactionConsensusUpdateTime - t.attachmentTime) minimum,
+      MAX(t.transactionConsensusUpdateTime - t.attachmentTime) maximum`,
         )
         .where(`t.type <> 'ZeroSpend' AND t.transactionConsensusUpdateTime IS NOT NULL AND t.updateTime > DATE_ADD(NOW(), INTERVAL -24 HOUR)`);
       const [confirmationStatisticError, confirmationStatistic] = await exec(query.getRawOne<TransactionConfirmationTimeResponseDto>());

@@ -275,9 +275,9 @@ export class TransactionService {
       if (lastConfirmationError) throw lastConfirmationError;
 
       return {
-        avg: lastConfirmation.average,
-        min: lastConfirmation.minimum,
-        max: lastConfirmation.maximum,
+        average: lastConfirmation.average,
+        minimum: lastConfirmation.minimum,
+        maximum: lastConfirmation.maximum,
       };
     } catch (error) {
       this.logger.error(error);
@@ -302,31 +302,6 @@ export class TransactionService {
         tvl: lastTotals.tvl,
         maxApy: lastTotals.maxApy,
       };
-    } catch (error) {
-      this.logger.error(error);
-      throw new ExplorerError(error);
-    }
-  }
-
-  async getConfirmationTime(): Promise<TransactionConfirmationTimeResponseDto> {
-    const manager = getManager('db_app');
-    try {
-      const query = manager
-        .getRepository<DbAppTransaction>('transactions')
-        .createQueryBuilder('t')
-        .select(
-          `
-      AVG(t.transactionConsensusUpdateTime - t.attachmentTime)/1000 avg, 
-      MIN(t.transactionConsensusUpdateTime - t.attachmentTime)/1000 min,
-      MAX(t.transactionConsensusUpdateTime - t.attachmentTime)/1000 max`,
-        )
-        .where(`t.type <> 'ZeroSpend' AND t.transactionConsensusUpdateTime IS NOT NULL AND t.updateTime > DATE_ADD(NOW(), INTERVAL -24 HOUR)`);
-      const [confirmationStatisticError, confirmationStatistic] = await exec(query.getRawOne<TransactionConfirmationTimeResponseDto>());
-
-      if (confirmationStatisticError) {
-        throw confirmationStatisticError;
-      }
-      return confirmationStatistic;
     } catch (error) {
       this.logger.error(error);
       throw new ExplorerError(error);

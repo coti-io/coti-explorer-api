@@ -3,9 +3,9 @@ export class WalletCountResponseDto {
 }
 
 export class TransactionConfirmationTimeResponseDto {
-  avg: number;
-  min: number;
-  max: number;
+  average: number;
+  minimum: number;
+  maximum: number;
 }
 
 export class TreasuryTotalsResponseDto {

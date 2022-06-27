@@ -180,30 +180,6 @@ export class MysqlLiveService {
     return totalTransactions;
   }
 
-  getTransactionAddressesToNotify(transaction: DbAppTransaction): string[] {
-    const addressToNotifyMap = {};
-    for (const bt of transaction.inputBaseTransactions) {
-      addressToNotifyMap[bt.addressHash] = 1;
-    }
-    for (const bt of transaction.receiverBaseTransactions) {
-      addressToNotifyMap[bt.addressHash] = 1;
-    }
-    for (const bt of transaction.fullnodeFeeBaseTransactions) {
-      addressToNotifyMap[bt.addressHash] = 1;
-    }
-    for (const bt of transaction.networkFeeBaseTransactions) {
-      addressToNotifyMap[bt.addressHash] = 1;
-    }
-    for (const bt of transaction.tokenGenerationFeeBaseTransactions) {
-      addressToNotifyMap[bt.addressHash] = 1;
-    }
-    for (const bt of transaction.tokenMintingFeeBaseTransactions) {
-      addressToNotifyMap[bt.addressHash] = 1;
-      addressToNotifyMap[bt.tokenMintingServiceData.receiverAddress] = 1;
-    }
-    return Object.keys(addressToNotifyMap);
-  }
-
   getTransactionsAddressesToNotify(transactions: DbAppTransaction[]): string[] {
     const addressToNotifyMap = {};
     for (const transaction of transactions) {
@@ -293,7 +269,7 @@ export class MysqlLiveService {
       const addressesBalanceMap = await getNativeBalances(allAddressesToNotify);
       const addressTotalTransactionCountMap = await this.getTotalTransactionCountMap(allAddressesToNotify);
       for (const transaction of transactionEntities) {
-        const addressesToNotify = this.getTransactionAddressesToNotify(transaction);
+        const addressesToNotify = this.getTransactionsAddressesToNotify([transaction]);
         const getTransactionCurrencyHashesToNotify = this.getTransactionsCurrencyHashesToNotify([transaction]);
 
         const eventMessage = new TransactionDto(transaction, currencySymbolMap);
