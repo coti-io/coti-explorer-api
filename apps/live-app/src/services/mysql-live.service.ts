@@ -11,17 +11,14 @@ import {
   getCurrencyIdsByCurrencyHashes,
   getCurrentSupplyUpdate,
   getNativeBalances,
-  getTmsdUpdate,
   getTokensSymbols,
   getTransactionsById,
   getTransactionsCount,
   getTransactionsCurrencyHashesToNotify,
   getTransactionsQuery,
-  TokenCirculatingSupplyUpdate,
   TransactionDto,
 } from '@app/shared';
 import { AppGateway } from '../gateway';
-import { utils as CryptoUtils } from '@coti-io/crypto';
 
 const firstRunMap = {};
 
@@ -142,23 +139,6 @@ export class MysqlLiveService {
           await this.eventHandler(diff.added, event);
         }
       });
-
-    this.liveConnection
-      .select(getTmsdUpdate(), [
-        {
-          table: `token_minting_service_data`,
-        },
-      ])
-      .on('update', async (diff: Diff) => {
-        const event = SocketEvents.TokenCirculatingSupplyUpdate;
-        if (!firstRunMap[event]) {
-          firstRunMap[event] = true;
-          return;
-        }
-        if (diff.added && diff.added.length > 0) {
-          await this.eventHandler(diff.added, event);
-        }
-      });
   }
 
   onBeforeExit(): void {
@@ -213,18 +193,10 @@ export class MysqlLiveService {
     if (!transactionEvents?.length) return;
 
     try {
-      // if (event === SocketEvents.TokenCirculatingSupplyUpdate) {
-      //   const currencyHashesToNotify = transactionEvents.map(tx => tx.mintingCurrencyHash);
-      //   const circulatingSupplies = await TokenCirculatingSupplyUpdate(currencyHashesToNotify);
-      //   for (const cs of circulatingSupplies) {
-      //     msgPromises.push(this.gateway.sendMessageToRoom(cs.hash, `${SocketEvents.TokenCirculatingSupplyUpdate}`, cs));
-      //   }
-      //   // return;
-      // }
       if (event === SocketEvents.NumberOfActiveAddresses) {
         const activeWallets = await getActiveWalletsCount();
         msgPromises.push(this.gateway.sendMessageToRoom(SocketEvents.NumberOfActiveAddresses, `${SocketEvents.NumberOfActiveAddresses}`, activeWallets));
-        // return;
+        return;
       }
       if (event === SocketEvents.TransactionConfirmationUpdate) {
         const lastConfirmationTimes = await getConfirmationTime();
@@ -269,7 +241,9 @@ export class MysqlLiveService {
         msgPromises.push(this.gateway.sendMessageToRoom(SocketEvents.GeneralTransactionsNotification, `${SocketEvents.GeneralTransactionsNotification}`, eventMessage));
       }
 
-      await Promise.all(msgPromises);
+      Promise.all(msgPromises).catch(err => {
+        this.logger.error(err);
+      });
     } catch (error) {
       this.logger.error(`Failed to send to socket: ${error}`);
     }
