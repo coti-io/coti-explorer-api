@@ -5,7 +5,7 @@ import { BaseEntity } from '../base.entity';
 import { Currency } from './currencies.entity';
 import { DbAppEntitiesNames } from './entities.names';
 import { DbAppTransaction, TransactionCurrency } from '@app/shared/entities';
-import { WalletCountResponseDto } from '@app/shared/dtos';
+import { TokenBalances, WalletCountResponseDto } from '@app/shared/dtos';
 import { ExplorerInternalServerError } from '../../../../../apps/explorer-api/src/errors';
 import { utils as CryptoUtils } from '@coti-io/crypto';
 
@@ -82,8 +82,8 @@ export async function getNativeBalance(addressHash: string): Promise<{ nativeBal
   return { nativeBalance: balance.amount };
 }
 
-export async function getNativeBalances(addressHashes: string[]): Promise<{ [key: string]: { nativeBalance: string; tokenData: { [key: string]: string } } }> {
-  const balanceMap: { [key: string]: { nativeBalance: string; tokenData: { [key: string]: string } } } = {};
+export async function getNativeBalances(addressHashes: string[]): Promise<any> {
+  const balanceMap: any = {};
 
   const [addressBalancesError, addressBalances] = await exec(
     getManager('db_app')
@@ -98,18 +98,18 @@ export async function getNativeBalances(addressHashes: string[]): Promise<{ [key
   if (addressBalancesError) {
     throw addressBalancesError;
   }
-  const tokenData = {};
-  let nativeBalance;
+
   for (const addressBalance of addressBalances) {
     const address = addressBalance.addressHash;
     if (!balanceMap[address]) {
       balanceMap[address] = { nativeBalance: '0', tokenData: {} };
     }
+    const currencyHash = addressBalance.currency.hash;
     const symbol = addressBalance.currency?.originatorCurrencyData?.symbol;
     if (!symbol) {
       balanceMap[address].nativeBalance = addressBalance.amount;
     } else {
-      balanceMap[address].tokenData[symbol] = addressBalance.amount;
+      balanceMap[address].tokenData[currencyHash] = { symbol, balance: addressBalance.amount };
     }
   }
 
