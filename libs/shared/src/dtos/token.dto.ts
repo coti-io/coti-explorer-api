@@ -56,6 +56,11 @@ export class TokenUploadImageUrlResponseDto {
   iconUrl: string;
 }
 
+export class TokensInfoResponseDto {
+  count: number;
+  tokenInfoList: TokenInfoResponseDto[];
+}
+
 export class TokenInfoResponseDto {
   uuid: string;
   name: string;

@@ -9,11 +9,13 @@ import {
   getCountActiveAddresses,
   getCurrencyHashCountByCurrencyId,
   getCurrencyIdsByCurrencyHashes,
+  getCurrentSupplyUpdate,
   getNativeBalances,
   getTmsdUpdate,
   getTokensSymbols,
   getTransactionsById,
   getTransactionsCount,
+  getTransactionsCurrencyHashesToNotify,
   getTransactionsQuery,
   TokenCirculatingSupplyUpdate,
   TransactionDto,
@@ -206,49 +208,19 @@ export class MysqlLiveService {
     return Object.keys(addressToNotifyMap);
   }
 
-  getTransactionsCurrencyHashesToNotify(transactions: DbAppTransaction[]): string[] {
-    const cotiCurrencyHash = CryptoUtils.getCurrencyHashBySymbol('coti');
-    const tokenTransactionsToNotifyMap = {
-      [cotiCurrencyHash]: 1,
-    };
-    for (const transaction of transactions) {
-      for (const bt of transaction.inputBaseTransactions) {
-        if (bt.currencyHash) tokenTransactionsToNotifyMap[bt.currencyHash] = 1;
-      }
-      for (const bt of transaction.receiverBaseTransactions) {
-        if (bt.currencyHash) tokenTransactionsToNotifyMap[bt.currencyHash] = 1;
-      }
-      for (const bt of transaction.fullnodeFeeBaseTransactions) {
-        if (bt.currencyHash) tokenTransactionsToNotifyMap[bt.currencyHash] = 1;
-      }
-      for (const bt of transaction.networkFeeBaseTransactions) {
-        if (bt.currencyHash) tokenTransactionsToNotifyMap[bt.currencyHash] = 1;
-      }
-      for (const bt of transaction.tokenGenerationFeeBaseTransactions) {
-        if (bt.currencyHash) tokenTransactionsToNotifyMap[bt.currencyHash] = 1;
-      }
-      for (const bt of transaction.tokenMintingFeeBaseTransactions) {
-        if (bt.currencyHash) tokenTransactionsToNotifyMap[bt.currencyHash] = 1;
-        tokenTransactionsToNotifyMap[bt.tokenMintingServiceData.mintingCurrencyHash] = 1;
-      }
-    }
-
-    return Object.keys(tokenTransactionsToNotifyMap);
-  }
-
   async eventHandler(transactionEvents: any[], event: string) {
     const msgPromises = [];
     if (!transactionEvents?.length) return;
 
     try {
-      if (event === SocketEvents.TokenCirculatingSupplyUpdate) {
-        const currencyHashesToNotify = transactionEvents.map(tx => tx.mintingCurrencyHash);
-        const circulatingSupplies = await TokenCirculatingSupplyUpdate(currencyHashesToNotify);
-        for (const cs of circulatingSupplies) {
-          msgPromises.push(this.gateway.sendMessageToRoom(cs.hash, `${SocketEvents.TokenCirculatingSupplyUpdate}`, cs));
-        }
-        // return;
-      }
+      // if (event === SocketEvents.TokenCirculatingSupplyUpdate) {
+      //   const currencyHashesToNotify = transactionEvents.map(tx => tx.mintingCurrencyHash);
+      //   const circulatingSupplies = await TokenCirculatingSupplyUpdate(currencyHashesToNotify);
+      //   for (const cs of circulatingSupplies) {
+      //     msgPromises.push(this.gateway.sendMessageToRoom(cs.hash, `${SocketEvents.TokenCirculatingSupplyUpdate}`, cs));
+      //   }
+      //   // return;
+      // }
       if (event === SocketEvents.NumberOfActiveAddresses) {
         const activeWallets = await getActiveWalletsCount();
         msgPromises.push(this.gateway.sendMessageToRoom(SocketEvents.NumberOfActiveAddresses, `${SocketEvents.NumberOfActiveAddresses}`, activeWallets));
@@ -256,11 +228,12 @@ export class MysqlLiveService {
       }
       if (event === SocketEvents.TransactionConfirmationUpdate) {
         const lastConfirmationTimes = await getConfirmationTime();
-        msgPromises.push(this.gateway.sendMessageToRoom(SocketEvents.NumberOfActiveAddresses, `${SocketEvents.TransactionConfirmationUpdate}`, lastConfirmationTimes));
+        msgPromises.push(this.gateway.sendMessageToRoom(SocketEvents.TransactionConfirmationUpdate, `${SocketEvents.TransactionConfirmationUpdate}`, lastConfirmationTimes));
       }
       const transactionIds = transactionEvents.map(x => x.id);
       const transactionEntities = await getTransactionsById(transactionIds);
-      const transactionsCurrencyHashes = this.getTransactionsCurrencyHashesToNotify(transactionEntities);
+      const circulatingSupplyUpdates = await getCurrentSupplyUpdate(transactionEntities);
+      const transactionsCurrencyHashes = getTransactionsCurrencyHashesToNotify(transactionEntities);
       const currencies = await getCurrencyIdsByCurrencyHashes(transactionsCurrencyHashes);
       const currencyIds = currencies.map(currency => currency.id);
       const currenciesCount = await getCurrencyHashCountByCurrencyId(currencyIds);
@@ -268,9 +241,14 @@ export class MysqlLiveService {
       const allAddressesToNotify = this.getTransactionsAddressesToNotify(transactionEntities);
       const addressesBalanceMap = await getNativeBalances(allAddressesToNotify);
       const addressTotalTransactionCountMap = await this.getTotalTransactionCountMap(allAddressesToNotify);
+      if (circulatingSupplyUpdates.length > 0) {
+        for (const cs of circulatingSupplyUpdates) {
+          msgPromises.push(this.gateway.sendMessageToRoom(cs.hash, `${SocketEvents.TokenCirculatingSupplyUpdate}`, cs));
+        }
+      }
       for (const transaction of transactionEntities) {
         const addressesToNotify = this.getTransactionsAddressesToNotify([transaction]);
-        const getTransactionCurrencyHashesToNotify = this.getTransactionsCurrencyHashesToNotify([transaction]);
+        const getTransactionCurrencyHashesToNotify = getTransactionsCurrencyHashesToNotify([transaction]);
 
         const eventMessage = new TransactionDto(transaction, currencySymbolMap);
         for (const addressToNotify of addressesToNotify) {

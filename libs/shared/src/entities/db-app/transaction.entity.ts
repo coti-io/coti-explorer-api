@@ -8,6 +8,7 @@ import { InputBaseTransaction } from './input-base-transaction.entity';
 import { TokenMintingFeeBaseTransaction } from '@app/shared/entities/db-app/token-minting-fee-base-transaction.entity';
 import { TokenGenerationFeeBaseTransaction } from '@app/shared/entities/db-app/token-generation-fee-base-transaction.entity';
 import { TransactionCurrency } from '@app/shared/entities/db-app/transaction-currencies';
+import { utils as CryptoUtils } from '@coti-io/crypto';
 
 @Entity(DbAppEntitiesNames.transactions)
 export class DbAppTransaction extends BaseEntity {
@@ -120,4 +121,34 @@ export async function getTransactionsById(transactionIds: number[]): Promise<DbA
     throw transactionsError;
   }
   return transactions;
+}
+
+export function getTransactionsCurrencyHashesToNotify(transactions: DbAppTransaction[]): string[] {
+  const cotiCurrencyHash = CryptoUtils.getCurrencyHashBySymbol('coti');
+  const tokenTransactionsToNotifyMap = {
+    [cotiCurrencyHash]: 1,
+  };
+  for (const transaction of transactions) {
+    for (const bt of transaction.inputBaseTransactions) {
+      if (bt.currencyHash) tokenTransactionsToNotifyMap[bt.currencyHash] = 1;
+    }
+    for (const bt of transaction.receiverBaseTransactions) {
+      if (bt.currencyHash) tokenTransactionsToNotifyMap[bt.currencyHash] = 1;
+    }
+    for (const bt of transaction.fullnodeFeeBaseTransactions) {
+      if (bt.currencyHash) tokenTransactionsToNotifyMap[bt.currencyHash] = 1;
+    }
+    for (const bt of transaction.networkFeeBaseTransactions) {
+      if (bt.currencyHash) tokenTransactionsToNotifyMap[bt.currencyHash] = 1;
+    }
+    for (const bt of transaction.tokenGenerationFeeBaseTransactions) {
+      if (bt.currencyHash) tokenTransactionsToNotifyMap[bt.currencyHash] = 1;
+    }
+    for (const bt of transaction.tokenMintingFeeBaseTransactions) {
+      if (bt.currencyHash) tokenTransactionsToNotifyMap[bt.currencyHash] = 1;
+      tokenTransactionsToNotifyMap[bt.tokenMintingServiceData.mintingCurrencyHash] = 1;
+    }
+  }
+
+  return Object.keys(tokenTransactionsToNotifyMap);
 }

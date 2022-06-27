@@ -12,6 +12,7 @@ import {
   TokenInfoRequestDto,
   TokenInfoResponseDto,
   TokenRequestDto,
+  TokensInfoResponseDto,
   TokenUploadImageUrlResponseDto,
 } from '@app/shared';
 
@@ -90,7 +91,7 @@ export class TokenService {
   }
 
   // end point for admin
-  async getTokensInfo(body: TokenRequestDto): Promise<TokenInfoResponseDto[]> {
+  async getTokensInfo(body: TokenRequestDto): Promise<TokensInfoResponseDto> {
     const dbAppManager = getManager('db_app');
     const explorerManager = getManager();
     const { limit, offset } = body;
@@ -153,7 +154,12 @@ export class TokenService {
         return acc;
       }, {});
 
-      return currencies.map(c => new TokenInfoResponseDto(c, tokenMap[c.hash], circulatingSupplyMap[c.hash]?.circulatingSupply));
+      const tokenInfoList = currencies.map(c => new TokenInfoResponseDto(c, tokenMap[c.hash], circulatingSupplyMap[c.hash]?.circulatingSupply));
+
+      return {
+        count: tgbtIds.length,
+        tokenInfoList,
+      };
     } catch (error) {
       this.logger.error(error);
       throw new ExplorerError(error);

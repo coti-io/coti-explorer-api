@@ -1,11 +1,11 @@
 import { exec } from '../../utils';
-import { Column, Entity, EntityManager, getManager, In, JoinColumn, ManyToOne } from 'typeorm';
+import { Column, Entity, getManager, In, JoinColumn, ManyToOne } from 'typeorm';
 import { AddressTransactionCount } from './address-transaction-counts.entity';
 import { BaseEntity } from '../base.entity';
 import { Currency } from './currencies.entity';
 import { DbAppEntitiesNames } from './entities.names';
-import { DbAppTransaction, TransactionCurrency } from '@app/shared/entities';
-import { TokenBalances, WalletCountResponseDto } from '@app/shared/dtos';
+import { DbAppTransaction, getTransactionsCurrencyHashesToNotify, TransactionCurrency } from '@app/shared/entities';
+import { TransactionType } from '@app/shared/dtos';
 import { ExplorerInternalServerError } from '../../../../../apps/explorer-api/src/errors';
 import { utils as CryptoUtils } from '@coti-io/crypto';
 
@@ -136,6 +136,14 @@ export async function TokenCirculatingSupplyUpdate(currencyHashes: string[]): Pr
   }
 
   return circulatingSupplyQueryRes;
+}
+
+export async function getCurrentSupplyUpdate(transactionEntities: DbAppTransaction[]) {
+  const confirmedMintingTxs = transactionEntities.filter(tx => tx.type === TransactionType.TOKEN_MINTING && tx.transactionConsensusUpdateTime);
+
+  const transactionsCurrencyHashes = getTransactionsCurrencyHashesToNotify(confirmedMintingTxs);
+
+  return await TokenCirculatingSupplyUpdate(transactionsCurrencyHashes);
 }
 
 export const getCountActiveAddresses = (): string => {
