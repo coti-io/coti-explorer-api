@@ -112,28 +112,15 @@ export class TokenService {
     const { limit, offset } = body;
     try {
       const count = await getTotalTgbts(dbAppManager);
-      const tgbtQuery = dbAppManager
-        .getRepository<TokenGenerationFeeBaseTransaction>(DbAppEntitiesNames.tokenGenerationFeeBaseTransactions)
-        .createQueryBuilder('tgbt')
-        .innerJoinAndSelect('tgbt.baseTransaction', 't')
-        .orderBy('t.attachmentTime', 'DESC')
-        .limit(limit)
-        .offset(offset);
-
-      const [tgbtError, tgbt] = await exec(tgbtQuery.getMany());
-      if (tgbtError) {
-        throw new ExplorerInternalServerError(tgbtError.message);
-      }
-      const tgbtIds = tgbt.map(baseTx => baseTx.id);
-
       const currencyQuery = dbAppManager
         .getRepository<Currency>(DbAppEntitiesNames.currencies)
         .createQueryBuilder('c')
         .innerJoinAndSelect('c.transaction', 't')
         .innerJoinAndSelect('c.originatorCurrencyData', 'ocd')
-        .innerJoinAndSelect('ocd.tokenGenerationServiceData', 'tgsd')
-        .innerJoinAndSelect('tgsd.tokenGenerationBaseTransaction', 'tgbt')
-        .where(`tgbt.id IN (:ids)`, { ids: tgbtIds });
+        .where('t.transactionConsensusUpdateTime IS NOT NULL')
+        .orderBy('t.attachmentTime', 'DESC')
+        .limit(limit)
+        .offset(offset);
 
       const [currencyError, currencies] = await exec(currencyQuery.getMany());
       if (currencyError) {

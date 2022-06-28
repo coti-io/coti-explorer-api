@@ -12,6 +12,7 @@ import {
   getCurrentSupplyUpdate,
   getNativeBalances,
   getTokensSymbols,
+  getTotalTgbts,
   getTransactionsById,
   getTransactionsCount,
   getTransactionsCurrencyHashesToNotify,
@@ -41,6 +42,7 @@ export enum SocketEvents {
   CotiPrice = 'cotiPrice',
   NewTokens = 'newToken',
   Tokens = 'tokens',
+  TokensTotal = 'tokensTotal',
 }
 
 type MonitoredTx = {
@@ -228,6 +230,11 @@ export class MysqlLiveService {
         for (const tokenInfo of tokensInfo) {
           msgPromises.push(this.gateway.sendMessageToRoom(SocketEvents.Tokens, SocketEvents.NewTokens, tokensInfo));
         }
+        const [totalTokensError, totalTokens] = await exec(getTotalTgbts());
+        if (totalTokensError) {
+          this.logger.error(totalTokensError);
+        }
+        if (totalTokens) msgPromises.push(this.gateway.sendMessageToRoom(SocketEvents.Tokens, SocketEvents.TokensTotal, { count: totalTokens }));
       }
       // build token info for this tokens
       if (circulatingSupplyUpdates.length > 0) {

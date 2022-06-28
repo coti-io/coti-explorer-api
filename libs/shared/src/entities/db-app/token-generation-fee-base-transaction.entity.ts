@@ -25,11 +25,13 @@ export class TokenGenerationFeeBaseTransaction extends BaseTransactionEntity {
   baseTransaction: DbAppTransaction;
 }
 
-export async function getTotalTgbts(dbAppManager: EntityManager): Promise<number> {
+export async function getTotalTgbts(dbAppManager?: EntityManager): Promise<number> {
+  if (!dbAppManager) dbAppManager = getManager('db_app');
   const query = dbAppManager
     .getRepository<TokenGenerationFeeBaseTransaction>(DbAppEntitiesNames.tokenGenerationFeeBaseTransactions)
     .createQueryBuilder('tgbt')
-    .innerJoinAndSelect('tgbt.baseTransaction', 't');
+    .innerJoinAndSelect('tgbt.baseTransaction', 't')
+    .where('t.transactionConsensusUpdateTime IS NOT NULL');
   const [tgbtIdsError, tgbtIds] = await exec(query.getMany());
   if (tgbtIdsError) {
     throw tgbtIdsError;
