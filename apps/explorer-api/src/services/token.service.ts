@@ -90,6 +90,21 @@ export class TokenService {
     }
   }
 
+  async getTokensInfoBySymbol(symbols: string[]): Promise<TokenInfoResponseDto[]> {
+    try {
+      const currencyHashs = symbols.map(s => CryptoUtils.getCurrencyHashBySymbol(s));
+      const [tokenInfosError, tokenInfos] = await exec(Promise.all(currencyHashs.map(currencyHash => this.getTokenInfo({ currencyHash }))));
+      if (tokenInfosError) {
+        throw new ExplorerInternalServerError(tokenInfosError.message);
+      }
+
+      return tokenInfos;
+    } catch (error) {
+      this.logger.error(error);
+      throw new ExplorerError(error);
+    }
+  }
+
   // end point for admin
   async getTokensInfo(body: TokenRequestDto): Promise<TokensInfoResponseDto> {
     const dbAppManager = getManager('db_app');

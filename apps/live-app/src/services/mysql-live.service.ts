@@ -19,6 +19,7 @@ import {
   TransactionDto,
 } from '@app/shared';
 import { AppGateway } from '../gateway';
+import { TokenService } from '../../../explorer-api/src/services';
 
 const firstRunMap = {};
 
@@ -38,6 +39,8 @@ export enum SocketEvents {
   AddressBalanceUpdate = 'addressBalanceUpdate',
   TokenCirculatingSupplyUpdate = 'tokenCirculatingSupplyUpdate',
   CotiPrice = 'cotiPrice',
+  NewTokens = 'newToken',
+  Tokens = 'tokens',
 }
 
 type MonitoredTx = {
@@ -76,7 +79,7 @@ export class MysqlLiveService {
   isInit = false;
   liveConnection: any;
 
-  constructor(private gateway: AppGateway, private readonly configService: ConfigService) {
+  constructor(private gateway: AppGateway, private readonly configService: ConfigService, private readonly tokenService: TokenService) {
     this.init().catch(error => this.logger.error(error));
   }
 
@@ -214,6 +217,19 @@ export class MysqlLiveService {
       const allAddressesToNotify = this.getTransactionsAddressesToNotify(transactionEntities);
       const addressesBalanceMap = await getNativeBalances(allAddressesToNotify);
       const addressTotalTransactionCountMap = await this.getTotalTransactionCountMap(allAddressesToNotify);
+      const confirmedTokenGenerationTransactionSymbols = transactionEntities
+        .filter(tx => tx.tokenGenerationFeeBaseTransactions.length > 0 && tx.transactionConsensusUpdateTime)
+        .map(tx => tx.tokenGenerationFeeBaseTransactions[0].tokenGenerationServiceData.originatorCurrencyData.symbol);
+      const [tokenResError, tokensInfo] = await exec(this.tokenService.getTokensInfoBySymbol(confirmedTokenGenerationTransactionSymbols));
+      if (tokenResError) {
+        this.logger.error(tokenResError);
+      }
+      if (tokensInfo && tokensInfo.length) {
+        for (const tokenInfo of tokensInfo) {
+          msgPromises.push(this.gateway.sendMessageToRoom(SocketEvents.Tokens, SocketEvents.NewTokens, tokensInfo));
+        }
+      }
+      // build token info for this tokens
       if (circulatingSupplyUpdates.length > 0) {
         for (const cs of circulatingSupplyUpdates) {
           msgPromises.push(this.gateway.sendMessageToRoom(cs.currencyHash, `${SocketEvents.TokenCirculatingSupplyUpdate}`, cs));

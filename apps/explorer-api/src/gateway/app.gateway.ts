@@ -44,12 +44,13 @@ export class AppGateway implements OnGatewayInit, OnGatewayConnection, OnGateway
       activeWallets?: boolean;
       transactionConfirmationUpdates?: boolean;
       transactions?: boolean;
+      tokens?: boolean;
       cotiPrice?: boolean;
     },
   ) {
     try {
       if (!payload) return;
-      const { address, hash, nodeHash, tokenHash, nodeUpdates, treasuryTotals, activeWallets, transactionConfirmationUpdates, transactions, cotiPrice } = payload;
+      const { address, hash, nodeHash, tokenHash, nodeUpdates, treasuryTotals, activeWallets, transactionConfirmationUpdates, transactions, cotiPrice, tokens } = payload;
       let addressLog = '';
       let hashLog = '';
       let nodeHashLog = '';
@@ -60,6 +61,7 @@ export class AppGateway implements OnGatewayInit, OnGatewayConnection, OnGateway
       let transactionConfirmationUpdatesLog = '';
       let transactionsLog = '';
       let cotiPriceLog = '';
+      const tokensLog = '';
       if (address) {
         client.join(address);
         addressLog = `[address ${address}]`;
@@ -100,8 +102,12 @@ export class AppGateway implements OnGatewayInit, OnGatewayConnection, OnGateway
         client.join(SocketEvents.CotiPrice);
         cotiPriceLog = `[cotiPrice ${cotiPrice}]`;
       }
+      if (tokens) {
+        client.join(SocketEvents.Tokens);
+        cotiPriceLog = `[tokens ${tokens}]`;
+      }
       this.logger.log(
-        `[subscribe][socketId: ${client.id}]${addressLog}${hashLog}${nodeHashLog}${tokenLog}${nodeUpdatesLog}${treasuryTotalsLog}${activeWalletsLog}${transactionConfirmationUpdatesLog}${transactionsLog}${cotiPriceLog}`,
+        `[subscribe][socketId: ${client.id}]${addressLog}${hashLog}${nodeHashLog}${tokenLog}${nodeUpdatesLog}${treasuryTotalsLog}${activeWalletsLog}${transactionConfirmationUpdatesLog}${transactionsLog}${cotiPriceLog}${tokensLog}`,
       );
     } catch (error) {
       this.logger.warn('socket subscribe failed');
@@ -122,10 +128,11 @@ export class AppGateway implements OnGatewayInit, OnGatewayConnection, OnGateway
       transactionConfirmationUpdates?: boolean;
       transactions?: boolean;
       cotiPrice?: boolean;
+      tokens?: boolean;
     },
   ) {
     try {
-      const { address, hash, nodeHash, tokenHash, nodeUpdates, treasuryTotals, activeWallets, transactionConfirmationUpdates, transactions, cotiPrice } = payload;
+      const { address, hash, nodeHash, tokenHash, nodeUpdates, treasuryTotals, activeWallets, transactionConfirmationUpdates, transactions, cotiPrice, tokens } = payload;
       let addressLog = '';
       let hashLog = '';
       let nodeHashLog = '';
@@ -136,6 +143,7 @@ export class AppGateway implements OnGatewayInit, OnGatewayConnection, OnGateway
       let transactionConfirmationUpdatesLog = '';
       let transactionsLog = '';
       let cotiPriceLog = '';
+      let tokensLog = '';
       if (address) {
         client.leave(address);
         addressLog = `[address ${address}]`;
@@ -176,8 +184,12 @@ export class AppGateway implements OnGatewayInit, OnGatewayConnection, OnGateway
         client.leave(SocketEvents.CotiPrice);
         cotiPriceLog = `[cotiPrice ${cotiPrice}]`;
       }
+      if (tokens) {
+        client.leave(SocketEvents.Tokens);
+        tokensLog = `[tokens ${tokens}]`;
+      }
       this.logger.log(
-        `[unsubscribe][socketId: ${client.id}]${addressLog}${hashLog}${nodeHashLog}${tokenLog}${nodeUpdatesLog}${treasuryTotalsLog}${nodeUpdatesLog}${treasuryTotalsLog}${activeWalletsLog}${transactionConfirmationUpdatesLog}${transactionsLog}${cotiPriceLog}`,
+        `[unsubscribe][socketId: ${client.id}]${addressLog}${hashLog}${nodeHashLog}${tokenLog}${nodeUpdatesLog}${treasuryTotalsLog}${nodeUpdatesLog}${treasuryTotalsLog}${activeWalletsLog}${transactionConfirmationUpdatesLog}${transactionsLog}${cotiPriceLog}${tokensLog}`,
       );
     } catch (error) {
       this.logger.warn('socket unsubscribe failed');
