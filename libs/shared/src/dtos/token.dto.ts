@@ -98,6 +98,6 @@ export class TokenInfoResponseDto {
     this.medium = token?.medium;
     this.circulatingSupply = circulatingSupply || '0';
     this.trustChainSupply = circulatingSupply || '0';
-    this.createTime = currency?.createTime.toString();
+    this.createTime = currency?.createTime ? new Date(currency?.createTime).getTime().toString() : undefined;
   }
 }
