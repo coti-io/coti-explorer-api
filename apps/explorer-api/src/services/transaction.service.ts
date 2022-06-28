@@ -6,6 +6,7 @@ import {
   Addresses,
   AddressesTransactionsResponseDto,
   ConfirmationTimeEntity,
+  CotiPriceResponseDto,
   Currency,
   DbAppEntitiesNames,
   DbAppTransaction,
@@ -31,12 +32,17 @@ import {
 } from '@app/shared';
 import { ConfigService } from '@nestjs/config';
 import { utils as CryptoUtils } from '@coti-io/crypto';
+import { firstValueFrom } from 'rxjs';
+import { SocketEvents } from '../../../live-app/src/services';
+import { HttpService } from '@nestjs/axios';
 
 @Injectable()
 export class TransactionService {
   private readonly logger = new Logger('TransactionService');
-
-  constructor(private readonly configService: ConfigService) {}
+  private readonly treasuryUrl: string;
+  constructor(private readonly configService: ConfigService, private httpService: HttpService) {
+    this.treasuryUrl = this.configService.get<string>('TREASURY_URL');
+  }
 
   async getTransactions(body: TransactionRequestDto): Promise<TransactionsResponseDto> {
     const manager = getManager('db_app');
@@ -306,5 +312,12 @@ export class TransactionService {
       this.logger.error(error);
       throw new ExplorerError(error);
     }
+  }
+
+  async getCotiPrice(): Promise<CotiPriceResponseDto> {
+    const [getCotiPriceError, getCotiPrice] = await exec(firstValueFrom(this.httpService.get(`${this.treasuryUrl}/get-coti-price`)));
+    if (getCotiPriceError) throw getCotiPriceError;
+
+    return getCotiPrice.data;
   }
 }

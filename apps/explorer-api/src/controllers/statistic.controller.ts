@@ -1,9 +1,10 @@
 import { Controller, HttpCode, Post, UseFilters, UseInterceptors } from '@nestjs/common';
-import { TransactionConfirmationTimeResponseDto, TreasuryTotalsResponseDto, WalletCountResponseDto } from '@app/shared';
+import { CotiPriceResponseDto, TransactionConfirmationTimeResponseDto, TreasuryTotalsResponseDto, WalletCountResponseDto } from '@app/shared';
 import { ExplorerExceptionFilter } from '../filters';
 import { ResponseInterceptor } from '../interceptors';
 import { TransactionService, WalletService } from '../services';
 import { ApiTags } from '@nestjs/swagger';
+import { HttpService } from '@nestjs/axios';
 
 @ApiTags('Statistics')
 @UseInterceptors(ResponseInterceptor)
@@ -28,5 +29,11 @@ export class StatisticController {
   @HttpCode(200)
   async getTreasuryTotals(): Promise<TreasuryTotalsResponseDto> {
     return this.transactionService.getTreasuryTotals();
+  }
+
+  @Post('coti-price')
+  @HttpCode(200)
+  async getCotiPrice(): Promise<CotiPriceResponseDto> {
+    return this.transactionService.getCotiPrice();
   }
 }

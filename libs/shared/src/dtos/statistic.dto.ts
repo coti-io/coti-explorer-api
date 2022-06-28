@@ -16,3 +16,7 @@ export class TreasuryTotalsResponseDto {
   tvl: string;
   maxApy: string;
 }
+
+export class CotiPriceResponseDto {
+  price: string;
+}

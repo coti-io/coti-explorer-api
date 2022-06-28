@@ -5,9 +5,10 @@ import { ScheduleModule } from '@nestjs/schedule';
 import { AppGateway } from './gateway';
 import { services } from './services';
 import { controllers } from './controllers';
+import { HttpModule } from '@nestjs/axios';
 
 @Module({
-  imports: [validate(), dbAppInit(), explorerDbInit(), ScheduleModule.forRoot()],
+  imports: [validate(), HttpModule, dbAppInit(), explorerDbInit(), ScheduleModule.forRoot()],
   controllers: [...controllers],
   providers: [ConfigService, AppGateway, ...services],
 })
