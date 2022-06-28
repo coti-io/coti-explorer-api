@@ -101,7 +101,7 @@ export class TokenService {
         .getRepository<TokenGenerationFeeBaseTransaction>(DbAppEntitiesNames.tokenGenerationFeeBaseTransactions)
         .createQueryBuilder('tgbt')
         .innerJoinAndSelect('tgbt.baseTransaction', 't')
-        .orderBy('t.attachmentTime')
+        .orderBy('t.attachmentTime', 'DESC')
         .limit(limit)
         .offset(offset);
 
