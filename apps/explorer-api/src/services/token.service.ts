@@ -114,6 +114,7 @@ export class TokenService {
       const currencyQuery = dbAppManager
         .getRepository<Currency>(DbAppEntitiesNames.currencies)
         .createQueryBuilder('c')
+        .innerJoinAndSelect('c.transaction', 't')
         .innerJoinAndSelect('c.originatorCurrencyData', 'ocd')
         .innerJoinAndSelect('ocd.tokenGenerationServiceData', 'tgsd')
         .innerJoinAndSelect('tgsd.tokenGenerationBaseTransaction', 'tgbt')

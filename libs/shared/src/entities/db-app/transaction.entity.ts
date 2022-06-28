@@ -1,7 +1,7 @@
 import { TransactionType } from '../../dtos';
 import { exec } from '../../utils';
-import { Column, Entity, getManager, In, Not, OneToMany } from 'typeorm';
-import { FullnodeFeeBaseTransaction, NetworkFeeBaseTransaction, ReceiverBaseTransaction, TransactionAddress } from '.';
+import { Column, Entity, getManager, In, JoinColumn, Not, OneToMany, OneToOne } from 'typeorm';
+import { Currency, FullnodeFeeBaseTransaction, NetworkFeeBaseTransaction, ReceiverBaseTransaction, TransactionAddress } from '.';
 import { BaseEntity } from '../base.entity';
 import { DbAppEntitiesNames } from './entities.names';
 import { InputBaseTransaction } from './input-base-transaction.entity';
@@ -83,6 +83,9 @@ export class DbAppTransaction extends BaseEntity {
 
   @OneToMany(() => TokenGenerationFeeBaseTransaction, tokenGenerationFeeBaseTransactions => tokenGenerationFeeBaseTransactions.baseTransaction)
   tokenGenerationFeeBaseTransactions: TokenGenerationFeeBaseTransaction[];
+
+  @OneToOne(() => Currency, currency => currency.transaction)
+  currency: Currency;
 
   baseTransactions: (InputBaseTransaction | ReceiverBaseTransaction | FullnodeFeeBaseTransaction | NetworkFeeBaseTransaction)[];
 }

@@ -80,7 +80,7 @@ export class TokenInfoResponseDto {
   circulatingSupply: string;
   trustChainSupply: string;
   holders: number;
-  createTime: string;
+  attachmentTime: string;
 
   constructor(currency: Currency, token: TokenEntity, circulatingSupply: string) {
     this.name = currency.originatorCurrencyData.name;
@@ -98,6 +98,6 @@ export class TokenInfoResponseDto {
     this.medium = token?.medium;
     this.circulatingSupply = circulatingSupply || '0';
     this.trustChainSupply = circulatingSupply || '0';
-    this.createTime = currency?.createTime ? new Date(currency?.createTime).getTime().toString() : undefined;
+    this.attachmentTime = currency?.transaction?.attachmentTime;
   }
 }

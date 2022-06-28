@@ -10,6 +10,9 @@ import { TokenBalances } from '@app/shared/dtos';
 @Entity(DbAppEntitiesNames.currencies)
 export class Currency extends BaseEntity {
   @Column()
+  transactionId: number;
+
+  @Column()
   originatorCurrencyDataId: number;
 
   @Column()
@@ -21,6 +24,10 @@ export class Currency extends BaseEntity {
   @OneToOne(() => OriginatorCurrencyData, originatorCurrencyData => originatorCurrencyData.currency)
   @JoinColumn({ name: 'originatorCurrencyDataId' })
   originatorCurrencyData: OriginatorCurrencyData;
+
+  @OneToOne(() => DbAppTransaction, transaction => transaction.currency)
+  @JoinColumn({ name: 'transactionId' })
+  transaction: DbAppTransaction;
 }
 
 export async function getTokensSymbols(transactions: DbAppTransaction[]): Promise<{ [key: string]: string }> {
