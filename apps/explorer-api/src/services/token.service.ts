@@ -5,6 +5,7 @@ import {
   DbAppEntitiesNames,
   exec,
   ExplorerAppEntitiesNames,
+  getTotalTgbts,
   TokenEntity,
   TokenGenerationFeeBaseTransaction,
   TokenInfoBySymbolRequestDto,
@@ -95,6 +96,7 @@ export class TokenService {
     const explorerManager = getManager();
     const { limit, offset } = body;
     try {
+      const count = await getTotalTgbts(dbAppManager);
       const tgbtQuery = dbAppManager
         .getRepository<TokenGenerationFeeBaseTransaction>(DbAppEntitiesNames.tokenGenerationFeeBaseTransactions)
         .createQueryBuilder('tgbt')
@@ -156,7 +158,7 @@ export class TokenService {
       const tokenInfoList = currencies.map(c => new TokenInfoResponseDto(c, tokenMap[c.hash], circulatingSupplyMap[c.hash]?.circulatingSupply));
 
       return {
-        count: tgbtIds.length,
+        count,
         tokenInfoList,
       };
     } catch (error) {
