@@ -1,9 +1,8 @@
 import { Column, Entity, getManager, In, JoinColumn, ManyToOne } from 'typeorm';
 import { BaseEntity } from '../base.entity';
 import { DbAppEntitiesNames } from './entities.names';
-import { Currency, DbAppTransaction } from '@app/shared/entities';
+import { DbAppTransaction } from '@app/shared/entities';
 import { exec } from '@app/shared/utils';
-import { number } from 'joi';
 
 @Entity(DbAppEntitiesNames.transactionsCurrencies)
 export class TransactionCurrency extends BaseEntity {

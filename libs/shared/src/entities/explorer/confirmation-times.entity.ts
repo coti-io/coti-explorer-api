@@ -1,7 +1,6 @@
-import { Column, Entity, getManager, In } from 'typeorm';
+import { Column, Entity, getManager } from 'typeorm';
 import { BaseEntity } from '../base.entity';
 import { ExplorerAppEntitiesNames } from './entities.names';
-import { Currency, DbAppEntitiesNames, DbAppTransaction, getTransactionsCurrencyHash } from '@app/shared/entities';
 import { exec } from '@app/shared/utils';
 import { TransactionConfirmationEventDto } from '@app/shared/dtos';
 

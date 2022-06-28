@@ -3,7 +3,6 @@ import {
   CreateTokenInfoRequestDto,
   Currency,
   DbAppEntitiesNames,
-  DbAppTransaction,
   exec,
   ExplorerAppEntitiesNames,
   TokenEntity,

@@ -6,7 +6,7 @@ import {
   TokenInfoResponseDto,
   TokenRequestDto,
   TokensInfoResponseDto,
-  TokenUploadImageUrlResponseDto
+  TokenUploadImageUrlResponseDto,
 } from '@app/shared';
 import { ExplorerExceptionFilter } from '../filters';
 import { ExtendedMulterFile, FileExtender, ResponseInterceptor } from '../interceptors';

@@ -1,4 +1,4 @@
-import { Body, Controller, Get, HttpCode, Post, UseFilters, UseInterceptors } from '@nestjs/common';
+import { Body, Controller, HttpCode, Post, UseFilters, UseInterceptors } from '@nestjs/common';
 import { ExplorerExceptionFilter } from '../filters';
 import { ResponseInterceptor } from '../interceptors';
 import { TransactionService } from '../services';
