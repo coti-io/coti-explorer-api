@@ -42,6 +42,7 @@ export class TokenService {
         .getRepository<Currency>(DbAppEntitiesNames.currencies)
         .createQueryBuilder('c')
         .innerJoinAndSelect('c.originatorCurrencyData', 'ocd')
+        .innerJoinAndSelect('c.transaction', 't')
         .where({ hash: currencyHash });
       const [currencyError, currency] = await exec(currencyQuery.getOne());
       if (currencyError) {
