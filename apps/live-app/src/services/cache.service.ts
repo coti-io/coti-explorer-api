@@ -72,7 +72,11 @@ export class CacheService {
       MIN(t.transactionConsensusUpdateTime - t.attachmentTime) minimum,
       MAX(t.transactionConsensusUpdateTime - t.attachmentTime) maximum`,
         )
-        .where(`t.type <> 'ZeroSpend' AND t.transactionConsensusUpdateTime IS NOT NULL AND t.updateTime > DATE_ADD(NOW(), INTERVAL -24 HOUR)`);
+        .where(
+          `t.type <> 'ZeroSpend' AND t.transactionConsensusUpdateTime IS NOT NULL AND t.updateTime > DATE_ADD(NOW(), INTERVAL -24 HOUR) AND t.transactionConsensusUpdateTime - t.attachmentTime < ${this.configService.get(
+            'MAX_CONSENSUS_REPORT_TIME',
+          )}`,
+        );
       const [confirmationStatisticError, confirmationStatistic] = await exec(query.getRawOne<TransactionConfirmationTimeResponseDto>());
 
       if (confirmationStatisticError) {

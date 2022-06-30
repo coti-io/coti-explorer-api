@@ -23,6 +23,8 @@ export function validate() {
       REDIS_IP: Joi.string().exist(),
       REDIS_PORT: Joi.number().exist(),
 
+      MAX_CONSENSUS_REPORT_TIME: Joi.number().exist(),
+
       NODE_MANAGER_URL: Joi.string().exist(),
     }),
     validationOptions: {
