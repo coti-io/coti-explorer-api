@@ -7,7 +7,6 @@ import {
   ExplorerAppEntitiesNames,
   getTotalTgbts,
   TokenEntity,
-  TokenGenerationFeeBaseTransaction,
   TokenInfoBySymbolRequestDto,
   TokenInfoRequestDto,
   TokenInfoResponseDto,

@@ -1,6 +1,6 @@
 import { TransactionType } from '../../dtos';
 import { exec } from '../../utils';
-import { Column, Entity, getManager, In, JoinColumn, Not, OneToMany, OneToOne } from 'typeorm';
+import { Column, Entity, getManager, In, Not, OneToMany, OneToOne } from 'typeorm';
 import { Currency, FullnodeFeeBaseTransaction, NetworkFeeBaseTransaction, ReceiverBaseTransaction, TransactionAddress } from '.';
 import { BaseEntity } from '../base.entity';
 import { DbAppEntitiesNames } from './entities.names';

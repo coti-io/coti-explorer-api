@@ -4,7 +4,6 @@ import { ExplorerExceptionFilter } from '../filters';
 import { ResponseInterceptor } from '../interceptors';
 import { TransactionService, WalletService } from '../services';
 import { ApiTags } from '@nestjs/swagger';
-import { HttpService } from '@nestjs/axios';
 
 @ApiTags('Statistics')
 @UseInterceptors(ResponseInterceptor)

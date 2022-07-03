@@ -1,4 +1,4 @@
-import { Column, Entity, EntityManager, getManager, In, JoinColumn, ManyToOne, Not, OneToOne } from 'typeorm';
+import { Column, Entity, EntityManager, getManager, JoinColumn, ManyToOne, OneToOne } from 'typeorm';
 import { DbAppTransaction } from '.';
 import { BaseTransactionEntity } from './base-transaction.entity';
 import { DbAppEntitiesNames } from './entities.names';

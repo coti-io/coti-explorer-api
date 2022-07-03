@@ -48,8 +48,6 @@ export class CacheService {
     if (saveError) throw saveError;
 
     await this.appGateway.sendMessageToRoom(SocketEvents.TreasuryTotalsUpdates, SocketEvents.TreasuryTotalsUpdates, getTotalsRes.data);
-
-    return;
   }
 
   async getCotiPrice(): Promise<void> {
@@ -57,8 +55,6 @@ export class CacheService {
     if (getCotiPriceError) throw getCotiPriceError;
 
     await this.appGateway.sendMessageToRoom(SocketEvents.CotiPrice, SocketEvents.CotiPrice, getCotiPrice.data);
-
-    return;
   }
 
   async getConfirmationTime(manager: EntityManager): Promise<TransactionConfirmationTimeResponseDto> {

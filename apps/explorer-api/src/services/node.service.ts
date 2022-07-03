@@ -127,7 +127,7 @@ export class NodeService {
       throw new ExplorerError(updateNodeResponseError);
     }
     try {
-      return this.getInfo({ nodeHash });
+      return await this.getInfo({ nodeHash });
     } catch (error) {
       this.logger.error(error);
       throw new ExplorerError(error);

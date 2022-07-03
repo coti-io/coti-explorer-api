@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 
 import { ExplorerBadRequestError, ExplorerError } from '../errors/explorer-error';
 import { getManager, Not } from 'typeorm';
@@ -33,7 +33,6 @@ import {
 import { ConfigService } from '@nestjs/config';
 import { utils as CryptoUtils } from '@coti-io/crypto';
 import { firstValueFrom } from 'rxjs';
-import { SocketEvents } from '../../../live-app/src/services';
 import { HttpService } from '@nestjs/axios';
 
 @Injectable()

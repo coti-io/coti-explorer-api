@@ -143,7 +143,7 @@ export async function getCurrentSupplyUpdate(transactionEntities: DbAppTransacti
 
   const transactionsCurrencyHashes = getTransactionsCurrencyHashesToNotify(confirmedMintingTxs);
 
-  return await TokenCirculatingSupplyUpdate(transactionsCurrencyHashes);
+  return TokenCirculatingSupplyUpdate(transactionsCurrencyHashes);
 }
 
 export const getCountActiveAddresses = (): string => {
