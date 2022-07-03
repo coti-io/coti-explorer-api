@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { BadRequestException, Injectable, Logger } from '@nestjs/common';
 
 import { ExplorerBadRequestError, ExplorerError } from '../errors/explorer-error';
 import { getManager, Not } from 'typeorm';
@@ -40,21 +40,24 @@ import { HttpService } from '@nestjs/axios';
 export class TransactionService {
   private readonly logger = new Logger('TransactionService');
   private readonly treasuryUrl: string;
+  private readonly totalTransactionsCount: number;
+
   constructor(private readonly configService: ConfigService, private httpService: HttpService) {
     this.treasuryUrl = this.configService.get<string>('TREASURY_URL');
+    this.totalTransactionsCount = 200;
   }
 
   async getTransactions(body: TransactionRequestDto): Promise<TransactionsResponseDto> {
     const manager = getManager('db_app');
     const { limit, offset } = body;
-    let transactionsIdFinal;
     try {
+      if (limit + offset > 200) throw new ExplorerBadRequestError('Allow only 200 transactions back');
+
       const idsQuery = manager
         .getRepository<DbAppTransaction>(DbAppEntitiesNames.transactions)
         .createQueryBuilder('t')
         .select('id')
         .where({ type: Not(TransactionType.ZEROSPEND) })
-        .andWhere('t.createTime >= now() - INTERVAL 1 DAY')
         .orderBy({ attachmentTime: 'DESC' })
         .limit(limit)
         .offset(offset);
@@ -64,33 +67,14 @@ export class TransactionService {
         throw transactionsIdsError;
       }
 
-      if ((transactionsIds.length < limit || 50) && (!offset || offset === 0)) {
-        const idsQuery = manager
-          .getRepository<DbAppTransaction>(DbAppEntitiesNames.transactions)
-          .createQueryBuilder('t')
-          .select('id')
-          .where({ type: Not(TransactionType.ZEROSPEND) })
-          .orderBy({ attachmentTime: 'DESC' })
-          .limit(limit)
-          .offset(offset);
-        const [transactionsIdsDefaultError, transactionsIdsDefault] = await exec(idsQuery.getRawMany<{ id: number }>());
-
-        if (transactionsIdsDefaultError) {
-          throw transactionsIdsDefaultError;
-        }
-        transactionsIdFinal = transactionsIdsDefault;
-      } else {
-        transactionsIdFinal = transactionsIds;
-      }
-
-      const ids = transactionsIdFinal.map(t => t.id);
+      const ids = transactionsIds.map(t => t.id);
       const [transactionsError, transactions] = await exec(getTransactionsById(ids));
 
       if (transactionsError) {
         throw transactionsError;
       }
       const currencySymbolMap = await getTokensSymbols(transactions);
-      return new TransactionsResponseDto(transactions.length, transactions, currencySymbolMap);
+      return new TransactionsResponseDto(this.totalTransactionsCount, transactions, currencySymbolMap);
     } catch (error) {
       this.logger.error(error);
       throw new ExplorerError(error);

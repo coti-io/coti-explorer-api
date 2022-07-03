@@ -66,7 +66,7 @@ export class TransactionRequestDto {
   @Optional()
   @IsNumber()
   @Max(50)
-  @Min(0)
+  @Min(1)
   limit = 50;
 
   @Optional()
