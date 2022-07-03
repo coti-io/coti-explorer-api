@@ -227,8 +227,9 @@ export class MysqlLiveService {
         this.logger.error(tokenResError);
       }
       if (tokensInfo && tokensInfo.length) {
-        msgPromises.push(this.gateway.sendMessageToRoom(SocketEvents.Tokens, SocketEvents.NewTokens, tokensInfo));
-
+        for (const tokenInfo of tokensInfo) {
+          msgPromises.push(this.gateway.sendMessageToRoom(SocketEvents.Tokens, SocketEvents.NewTokens, tokenInfo));
+        }
         const [totalTokensError, totalTokens] = await exec(getTotalTgbts());
         if (totalTokensError) {
           this.logger.error(totalTokensError);
