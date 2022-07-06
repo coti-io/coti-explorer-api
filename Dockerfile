@@ -14,4 +14,4 @@ WORKDIR /app
 COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/package*.json ./
 RUN npm install --only=production
-CMD ["npm", "run", "start-${APPLICATION_NAME}:prod"]
+CMD npm run start-${APPLICATION_NAME}:prod
