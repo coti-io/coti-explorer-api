@@ -9,6 +9,7 @@ RUN npm run build-${APPLICATION_NAME}
 
 FROM node:16
 ARG APPLICATION_NAME
+ENV APPLICATION_NAME=${APPLICATION_NAME}
 WORKDIR /app
 COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/package*.json ./
