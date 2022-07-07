@@ -5,6 +5,7 @@
 [![GitHub Stars](https://img.shields.io/github/stars/coti-io/coti-explorer-api.svg)](https://github.com/coti-io/coti-explorer-api/stargazers)
 [![GitHub Issues](https://img.shields.io/github/issues/coti-io/coti-explorer-api.svg)](https://github.com/coti-io/coti-explorer-api/issues)
 [![Current Version](https://img.shields.io/badge/version-0.1.0--beta.0-yellow.svg)](https://github.com/coti-io/coti-explorer-api/)
+[![Docker Publish](https://github.com/coti-io/coti-explorer-api/actions/workflows/publish.yml/badge.svg)](https://github.com/coti-io/coti-explorer-api/actions/workflows/publish.yml)
 [![Discord Server](https://img.shields.io/discord/386571547508473876.svg)](https://discord.me/coti)
 
 ---
