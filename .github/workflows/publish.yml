@@ -1,6 +1,6 @@
 # Build the docker image and push it to GitHub Packages
 
-name: Coti Explorer Api & Live App Publisher
+name: explorer api & live app publisher
 
 on:
   workflow_dispatch:
