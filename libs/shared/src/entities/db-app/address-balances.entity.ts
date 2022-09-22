@@ -71,8 +71,15 @@ export async function getTransactionsCount(addressesHash: string[]): Promise<{ [
 }
 
 export async function getNativeBalance(addressHash: string): Promise<{ nativeBalance: string }> {
+  const cotiCurrencyHash = CryptoUtils.getCurrencyHashBySymbol('coti');
   const [balanceError, balance] = await exec(
-    getManager('db_app').getRepository<AddressBalance>(DbAppEntitiesNames.addressBalances).createQueryBuilder('ab').where({ addressHash }).getOne(),
+    getManager('db_app')
+      .getRepository<AddressBalance>(DbAppEntitiesNames.addressBalances)
+      .createQueryBuilder('ab')
+      .leftJoinAndSelect('ab.currency', 'c')
+      .where({ addressHash })
+      .andWhere(`c.hash = '${cotiCurrencyHash}' `)
+      .getOne(),
   );
 
   if (balanceError) {
