@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { BadRequestException, Injectable, Logger } from "@nestjs/common";
 
 import { ExplorerBadRequestError, ExplorerError } from '../errors/explorer-error';
 import { getManager, Not } from 'typeorm';
@@ -151,10 +151,13 @@ export class TransactionService {
         .leftJoinAndSelect('tgsd.originatorCurrencyData', 'ocd')
         .leftJoinAndSelect('tgsd.currencyTypeData', 'ctd')
         .where('transactions.hash=:transactionHash', { transactionHash });
-      const [transactionError, transaction] = await exec(query.getOneOrFail());
+      const [transactionError, transaction] = await exec(query.getOne());
 
       if (transactionError) {
         throw transactionError;
+      }
+      if (!transaction) {
+        throw new BadRequestException(`Transaction hash: ${transactionHash} not found!`);
       }
 
       const currencySymbolMap = await getTokensSymbols([transaction]);
