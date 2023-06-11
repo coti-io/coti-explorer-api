@@ -86,7 +86,7 @@ export async function getNativeBalance(addressHash: string): Promise<{ nativeBal
     throw balanceError;
   }
 
-  return { nativeBalance: balance.amount };
+  return { nativeBalance: balance?.amount || '0' };
 }
 
 export async function getNativeBalances(addressHashes: string[]): Promise<any> {
